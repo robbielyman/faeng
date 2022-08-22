@@ -1,5 +1,11 @@
 -- faeng is a sequencer
+-- inspired by kria
+-- powerd by timber
+-- connect a grid
+-- and take wing
 --
+-- v 0.1
+-- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
 
@@ -103,7 +109,7 @@ function init()
         division = 1 / 16,
         action = function()
             Metatrack.counter = Metatrack.counter % Metatrack.division + 1
-            if Metatrack.counter % Metatrack.division == 1 then
+            if Metatrack.counter % Metatrack.division == 1 and Song_Mode then
                 Metatrack:increment()
             end
         end
@@ -163,8 +169,12 @@ function init()
             options = {'multisample', 'repitch'},
             default = 1,
             action = function()
-                for _, pattern in Tracks do
+                for _, pattern in ipairs(Tracks) do
                     pattern[i].transpose_mode = params:get('track_mode_' ..i) == 2
+                    for j = 1,16 do
+                        pattern[i].data[3][j] = params:get('track_mode_' ..i) == 2 and 3 or 1
+                    end
+                    pattern[i]:make_sequins(3)
                 end
             end,
         }
@@ -174,6 +184,7 @@ function init()
     params:add_separator()
     for i = 0, 255 do
         Timber.add_sample_params(i, true)
+        params:set('play_mode_' .. i, 4)
     end
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
@@ -187,9 +198,16 @@ function init()
     Timber.waveform_changed_callback = callback_waveform
     Timber.play_positions_changed_callback = callback_waveform
     Timber.views_change_callback = callback_screen
+    Timber.sample_changed_callback = callback_sample
     screen_redraw_metro:start(1/15)
     screen.aa(1)
     lattice:start()
+end
+
+function callback_sample(id)
+    if id then
+        params:set('play_mode_' .. id, 3)
+    end
 end
 
 function callback_screen(id)
@@ -257,14 +275,15 @@ function load_folder(file, add)
     end
 end
 
-function set_sample_id(id)
-    Sample_Setup_View:set_sample_id(id)
-    Waveform_View:set_sample_id(id)
-    Filter_Amp_View:set_sample_id(id)
-    Amp_Env_View:set_sample_id(id)
-    Mod_Env_View:set_sample_id(id)
-    LFOs_View:set_sample_id(id)
-    Mod_Matrix_View:set_sample_id(id)
+function set_sample_id()
+    Sample_Setup_View:set_sample_id(get_current_sample())
+    Waveform_View:set_sample_id(get_current_sample())
+    Filter_Amp_View:set_sample_id(get_current_sample())
+    Amp_Env_View:set_sample_id(get_current_sample())
+    Mod_Env_View:set_sample_id(get_current_sample())
+    LFOs_View:set_sample_id(get_current_sample())
+    Mod_Matrix_View:set_sample_id(get_current_sample())
+    Screen_Dirty = true
 end
 
 -- norns display
@@ -318,7 +337,7 @@ function enc(n, d)
                 for _,pattern in ipairs(Tracks) do
                     pattern[Active_Track]:set_sample_id(pattern[Active_Track].sample_id + d)
                 end
-                set_sample_id(Tracks[Pattern][Active_Track].sample_id)
+                set_sample_id()
             end
         else
             Screens:set_index_delta(d, false)
@@ -653,7 +672,7 @@ function grid_key(x, y, z)
                     SubSequins = 0
                 end
                 Active_Track = x
-                set_sample_id(Tracks[Pattern][Active_Track].sample_id)
+                set_sample_id()
             end
             Presses[x][y] = z
             Grid_Dirty = true
@@ -696,6 +715,11 @@ function grid_key(x, y, z)
                 if z == 0 and Press_Counter[x][y] then
                     clock.cancel(Press_Counter[x][y])
                     Pattern = x
+                    for _,track in ipairs(Tracks[Pattern]) do
+                        for i = 1, PAGES do
+                            track:increment(i, true)
+                        end
+                    end
                 else
                     -- start long press counter
                     Press_Counter[x][y] = clock.run(grid_long_press, x, y)
@@ -810,7 +834,7 @@ function grid_key(x, y, z)
                         end
                         if flag then
                             if x <= #track.data[Page][SubSequins] then
-                                track.data[Page][SubSequins][x] = track.data[SubSequins][x] == 1 and 0 or 1
+                                track.data[Page][SubSequins][x] = track.data[Page][SubSequins][x] == 1 and 0 or 1
                             end
                         end
                         track:make_sequins(Page)
@@ -856,7 +880,7 @@ function grid_key(x, y, z)
                 end
                 if flag then
                     -- move bounds
-                    local length = track.bounds[2] - track.bounds[1]
+                    local length = track.bounds[Page][2] - track.bounds[Page][1]
                     track.bounds[Page][1] = x
                     track.bounds[Page][2] = math.min(x + length, 16)
                 end
@@ -1028,6 +1052,9 @@ function grid_key(x, y, z)
             end
         end
     end
+    if z == 0 then
+        Presses[x][y] = z
+    end
 end
 
 function grid_long_press(x, y)
@@ -1037,8 +1064,14 @@ function grid_long_press(x, y)
     if y == 8 or Mod > 0 or SubSequins > 0 then
         return
     elseif Page > PAGES and y == 1 then
-        for i = 1, TRACKS do
-            Tracks[x][i] = Tracks[Pattern][i]
+        if not Song_Mode then
+            for i = 1, TRACKS do
+                Tracks[x][i]:copy(Tracks[Pattern][i])
+            end
+        else
+            for i = 1, TRACKS do
+                Tracks[x][i]:copy(Tracks[Pattern][i])
+            end
         end
         Pattern = x
         Grid_Dirty = true
@@ -1069,7 +1102,7 @@ function Track.new(id, transpose_mode, data, probabilities, divisions, lattice)
     t.probabilities = probabilities
     t.divisions = divisions
     t.transpose_mode = transpose_mode
-    t.sample_id = (t.id[2] - 1) * 64
+    t.sample_id = 0
     t.bounds = {}
     t.sequins = {}
     t.patterns = {}
@@ -1118,6 +1151,30 @@ function Track.new(id, transpose_mode, data, probabilities, divisions, lattice)
     return t
 end
 
+function Track:copy(track)
+    for i = 1, PAGES do
+        self.divisions[i] = track.divisions[i]
+        for j = 1,16 do
+            self.probabilities[i][j] = track.probabilities[i][j]
+            if type(track.data[i][j]) ~= 'number' then
+                self.data[i][j] = {}
+                for k = 1,#track.data[i][j] do
+                    self.data[i][j][k] = track.data[i][j][k]
+                end
+            else
+                self.data[i][j] = track.data[i][j]
+            end
+        end
+        for j = 1,2 do
+            self.bounds[i][j] = track.bounds[i][j]
+        end
+        self.indices[i] = track.indices[i]
+        self:make_sequins(i)
+    end
+    self.transpose_mode = track.transpose_mode
+    self.ratchet_counter = track.ratchet_counter
+end
+
 function Track:make_sequins(i)
     local s = {}
     for j = 1,16 do
@@ -1130,8 +1187,8 @@ function Track:make_sequins(i)
     self.sequins[i]:settable(s)
 end
 
-function Track:increment(i)
-    if self.indices[i] + 1 > self.bounds[i][2] or self.indices[i] + 1 < self.bounds[i][1] then
+function Track:increment(i, reset)
+    if reset or self.indices[i] + 1 > self.bounds[i][2] or self.indices[i] + 1 < self.bounds[i][1] then
         self.indices[i] = self.bounds[i][1]
     else
         self.indices[i] = self.indices[i] + 1
@@ -1146,7 +1203,7 @@ end
 function Track:play_note()
     local note = 60
     if self.transpose_mode then
-        note = note + note_nums[self.values[2]] + 12 * (self.values[3] - 3)
+        note = note_nums[self.values[2]] + 12 * (self.values[3] - 3)
     end
     local id = (self.id[2] - 1) * 64
     if not(self.transpose_mode) then
@@ -1155,7 +1212,7 @@ function Track:play_note()
         id = id + self.sample_id
     end
     if Timber.samples_meta[id].num_frames > 0 then
-        engine.noteOn(self.id[2], note, Velocities[self.values[4]], id)
+        engine.noteOn(self.id[2], MusicUtil.note_num_to_freq(note), Velocities[self.values[4]], id)
     end
 end
 
@@ -1175,6 +1232,12 @@ function Metatrack:increment()
             self.current = self.current + 1
             Pattern = self.data[self.current]
         end
+        for _,track in ipairs(Tracks[Pattern]) do
+            for i = 1, PAGES do
+                track:increment(i, true)
+            end
+        end
+        Grid_Dirty = true
     else
         self.index = self.index + 1
     end
