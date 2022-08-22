@@ -1174,6 +1174,7 @@ function Track:copy(track)
             self.bounds[i][j] = track.bounds[i][j]
         end
         self.indices[i] = track.indices[i]
+        self.values[i] = track.values[i]
         self:make_sequins(i)
     end
     self.transpose_mode = track.transpose_mode
@@ -1184,6 +1185,9 @@ function Track:make_sequins(i)
     local s = {}
     for j = 1,16 do
         if type(self.data[i][j]) ~= 'number' then
+            if #self.data[i][j] == 0 then
+                self.data[i][j] = {1}
+            end
             s[j] = sequins(self.data[i][j])
         else
             s[j] = self.data[i][j]
