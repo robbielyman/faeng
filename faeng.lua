@@ -109,7 +109,7 @@ function init()
         division = 1 / 16,
         action = function()
             Metatrack.counter = Metatrack.counter % Metatrack.division + 1
-            if Metatrack.counter % Metatrack.division == 1 and Song_Mode then
+            if Metatrack.counter == 1 and Song_Mode then
                 Metatrack:increment()
             end
         end
@@ -502,11 +502,16 @@ function page_view()
             for x = 1,64 do
                 local check = x >= Metatrack.bounds[1] and x <= Metatrack.bounds[2]
                 if check then
-                    Grid:led((x - 1) % 16 + 1, 3 + x // 16, 9)
+                    local y = x % 16 == 0 and 2 + x / 16 or 3 + x // 16
+                    Grid:led((x - 1) % 16 + 1, y, 9)
                 end
             end
-            Grid:led((Metatrack.selected - 1) % 16 + 1, 3 + Metatrack.selected // 16, 15)
-            Grid:led((Metatrack.current - 1) % 16 + 1, 3 + Metatrack.current // 16, 15)
+            local y = Metatrack.selected % 16 and 2 + Metatrack.selected / 16
+                or 3 + Metatrack.selected // 16
+            Grid:led((Metatrack.selected - 1) % 16 + 1, y, 15)
+            y = Metatrack.current % 16 and 2 + Metatrack.current / 16
+                or 3 + Metatrack.current // 16
+            Grid:led((Metatrack.current - 1) % 16 + 1, y, 15)
         end
         return
     end
