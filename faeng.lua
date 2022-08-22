@@ -506,10 +506,10 @@ function page_view()
                     Grid:led((x - 1) % 16 + 1, y, 9)
                 end
             end
-            local y = Metatrack.selected % 16 and 2 + Metatrack.selected / 16
+            local y = Metatrack.selected % 16 == 0 and 2 + Metatrack.selected / 16
                 or 3 + Metatrack.selected // 16
             Grid:led((Metatrack.selected - 1) % 16 + 1, y, 15)
-            y = Metatrack.current % 16 and 2 + Metatrack.current / 16
+            y = Metatrack.current % 16 == 0 and 2 + Metatrack.current / 16
                 or 3 + Metatrack.current // 16
             Grid:led((Metatrack.current - 1) % 16 + 1, y, 15)
         end
