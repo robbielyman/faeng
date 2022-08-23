@@ -5,7 +5,7 @@ inspired by [kria](https://monome.org/docs/ansible/kria/)
 
 powered by [timber](https://github.com/markwheeler/timber)
 
-connect a grid to norns
+connect a [grid](https://monome.org/docs/grid) to [norns](https://monome.org/docs/norns)
 
 and take wing
 
