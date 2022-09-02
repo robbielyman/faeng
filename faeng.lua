@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 0.1
+-- v 0.2
 -- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
