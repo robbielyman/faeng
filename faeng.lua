@@ -1214,7 +1214,7 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
                 }
             elseif i == 6 then
                 t.patterns[i] = host_lattice:new_pattern{
-                    division = 1 / (12 * 16),
+                    division = divisions[i][1] / (12 * 16),
                     action = function()
                         local pattern = t.values[PAGES + 1]
                         t.ratchet_counter = t.ratchet_counter % (12 * divisions[i][pattern]) + 1
@@ -1244,6 +1244,10 @@ function Track:update(i)
     if i ~= 6 then
         local pattern = self.values[PAGES + 1]
         self.patterns[i]:set_division(self.divisions[i][pattern] / 16)
+    end
+    if i == 6 or i == 1 then
+        local pattern = self.values[PAGES + 1]
+        self.patterns[6]:set_division(self.divisions[1][pattern] / (12 * 16))
     end
 end
 
