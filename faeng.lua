@@ -614,7 +614,7 @@ function page_view()
                     end
                 end
                 if track.indices[Page][pattern] == x then
-                    local out_of_twelve = (track.ratchet_counter[pattern] - 1) % 12 + 1
+                    local out_of_twelve = (track.ratchet_counter - 1) % 12 + 1
                     local i = out_of_twelve // (12 / (ratchet_amount + 1))
                     if ratchets & 2^i == 2^i then
                         Grid:led(x, 7 - i, 15)
