@@ -405,6 +405,9 @@ function division_view()
     else
         Grid:led(Tracks[Active_Track].divisions[Page], 2, 15)
     end
+    if Page < 6 then
+        Grid:led(Tracks[Active_Track].swings[Page][pattern], 4, 15)
+    end
 end
 
 function probability_view()
@@ -954,6 +957,15 @@ function grid_key(x, y, z)
                 end
                 Presses[x][y] = z
                 Grid_Dirty = true
+            elseif y == 4 and Page < 6 then
+                if z == 0 then
+                    if Page <= PAGES then
+                        track.swings[Page][pattern] = x
+                        track:update(Page)
+                    end
+                end
+                Presses[x][y] = z
+                Grid_Dirty = true
             end
         elseif Mod == 3 then
             -- Probability mod
@@ -1158,6 +1170,7 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
     t.data = data
     t.probabilities = probabilities
     t.divisions = divisions
+    t.swings = {}
     t.muted = muted
     t.lengths = lengths
     t.bounds = {}
@@ -1173,6 +1186,7 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
     t.sequins[PAGES + 1] = sequins(data[PAGES+1])
     t.sequins[PAGES + 1]:select(1)
     t.values[PAGES + 1] = t.sequins[PAGES + 1][1]
+    t.swings[PAGES + 1] = 8
     t.patterns[PAGES + 1] = host_lattice:new_pattern{
         division = divisions[PAGES + 1] / 16,
         action = function()
@@ -1191,12 +1205,14 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
         t.values[i] = {}
         t.sequins[i] = {}
         t.patterns[i] = {}
+        t.swings[i] = {}
         for n = 1, 16 do
             t.bounds[i][n] = {1,6}
             t.indices[i][n] = 0
             t.sequins[i][n] = sequins(data[i][n])
             t.sequins[i][n]:select(1)
             t.values[i][n] = t.sequins[i][n][1]
+            t.swings[i][n] = 8
             end
             if i ~= 6 then
                 t.patterns[i] = host_lattice:new_pattern{
@@ -1244,6 +1260,7 @@ function Track:update(i)
     if i ~= 6 then
         local pattern = self.values[PAGES + 1]
         self.patterns[i]:set_division(self.divisions[i][pattern] / 16)
+        self.patterns[i]:set_swing(self.swings[i][pattern] * 100 / 16)
     end
     if i == 6 or i == 1 then
         local pattern = self.values[PAGES + 1]
