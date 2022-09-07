@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 0.2.1
+-- v 0.2.2
 -- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
@@ -438,6 +438,7 @@ end
 function page_view()
     if Page == 0 then
         -- tracks page
+        Grid:led(1, 1, 4)
         for x = 1, 16 do
             local pattern = Tracks[x].values[PAGES + 1]
             Grid:led(x, 4, 4)
@@ -714,6 +715,21 @@ function grid_key(x, y, z)
                         Tracks[x]:increment(i, pattern, true)
                     else
                         Tracks[x]:increment(i, nil, true)
+                    end
+                end
+            end
+            Presses[x][y] = z
+            Grid_Dirty = true
+        elseif y == 1 and x == 1 then
+            -- reset all tracks
+            if z == 0 then
+                for i = 1, TRACKS do
+                    for j = 1, PAGES + 1 do
+                        if j <= PAGES then
+                            Tracks[i]:increment(j, pattern, true)
+                        else
+                            Tracks[i]:increment(j, nil, true)
+                        end
                     end
                 end
             end
