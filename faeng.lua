@@ -122,7 +122,7 @@ function init()
         end
     }
     -- UI setup
-    Screens = UI.Pages.new(0, 7)
+    Screens = UI.Pages.new(1, 7)
     screen_redraw_metro = metro.init()
     screen_redraw_metro.event = function()
         if Screen_Dirty then
