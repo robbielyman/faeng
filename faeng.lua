@@ -9,7 +9,7 @@
 
 engine.name = "Timber"
 
-local Timber = include("lib/timber_guts")
+Timber = include("lib/timber_guts")
 local sequins = require("sequins")
 local Lattice = require("lattice")
 local MusicUtil = require("musicutil")
@@ -168,7 +168,7 @@ function init()
     Timber.meta_changed_callback = callback_screen
     Timber.waveform_changed_callback = callback_waveform
     Timber.play_positions_changed_callback = callback_waveform
-    Timber.views_change_callback = callback_screen
+    Timber.views_changed_callback = callback_screen
     Timber.sample_changed_callback = callback_sample
     screen_redraw_metro:start(1/15)
     screen.aa(1)
@@ -185,9 +185,9 @@ function callback_sample(id)
 end
 
 function callback_screen(id)
-    if not id or id == Tracks[Active_Track].sample_id then
+    -- if not(id) or id == Tracks[Active_Track].sample_id then
         Screen_Dirty = true
-    end
+    -- end
 end
 
 function callback_waveform(id)
@@ -265,7 +265,7 @@ end
 function redraw()
     Screen_Dirty = false
     screen.clear()
-    if File_Select or Timber.file_select_active then
+    if Timber.file_select_active then
         Timber.FileSelect.redraw()
         return
     end

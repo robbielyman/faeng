@@ -11,7 +11,7 @@ local Graph = require "graph"
 
 local Timber = {}
 
-Timber.fileselect = require "fileselect"
+Timber.FileSelect = require "fileselect"
 
 local SCREEN_FRAMERATE = 15
 
@@ -142,7 +142,7 @@ local function sample_loaded(id, streaming, num_frames, num_channels, sample_rat
     samples_meta[id].streaming = streaming
     samples_meta[id].num_frames = num_frames
     samples_meta[id].num_channels = num_channels
-    samples_meta[id].samples_rate = sample_rate
+    samples_meta[id].sample_rate = sample_rate
     samples_meta[id].positions = {}
     samples_meta[id].waveform = {}
     samples_meta[id].waveform_requested = false
@@ -358,8 +358,8 @@ local function voice_freed(id, voice_id)
     Timber.play_positions_changed_callback(id)
 end
 
-function Timber.osc_event(path, args, _)
-    if path == "/engineSampleLaoded" then
+function Timber.osc_event(path, args, from)
+    if path == "/engineSampleLoaded" then
         sample_loaded(args[1], args[2], args[3], args[4], args[5])
     elseif path == "/engineSampleLoadFailed" then
         sample_load_failed(args[1], args[2])
@@ -465,7 +465,7 @@ function Timber.add_params()
             Timber.lfo_2_dirty = true
         end
     }
-    parms:add{
+    params:add{
         type = "option",
         id = "lfo_2_wave_shape",
         name = "LFO2 Shape",
@@ -486,7 +486,7 @@ function Timber.add_sample_params(id)
         params:add_group("Sample " .. id, num_params)
     end
     id = id or 0
-    params:add_separator("sample_" .. id, "Sample")
+    params:add_separator("sample_sep_" .. id, "Sample")
     params:add{
         type = "file",
         id = "sample_" .. id,
@@ -915,7 +915,7 @@ function Timber.draw_title(sample_id, show_sample_name)
 
     local max_title_width = 100
     screen.move(4, 9)
-    screen.text(string.formal("%03d", sample_id))
+    screen.text(string.format("%03d", sample_id))
     screen.move(23, 9)
 
     local title
@@ -1071,7 +1071,7 @@ function Timber.UI.SampleSetup:enc(n, delta)
         end
     else
         if n == 2 then
-            self:set_index(self.set_index + delta)
+            self:set_index(self.index + delta)
         elseif n == 3 then
             self:set_param_delta(delta)
         end
@@ -1251,7 +1251,7 @@ function Timber.UI.Waveform:key(n, z)
     end
 end
 
-function Timber.UI.Waveformn:update()
+function Timber.UI.Waveform:update()
     if waveform_last_edited and waveform_last_edited.id == self.sample_id then
         if waveform_last_edited.param then
             self.last_edited_param = waveform_last_edited.param
@@ -1545,7 +1545,7 @@ function Timber.UI.Env:redraw()
     screen.text("A " .. params:string(self.env_name .. "_env_attack_" .. self.sample_id))
     screen.move(4, 38)
     screen.text("D " .. params:string(self.env_name .. "_env_decay_" .. self.sample_id))
-    if self.tab_id == 2 then screen.level(15) else screen.level 3 end
+    if self.tab_id == 2 then screen.level(15) else screen.level(3) end
     screen.move(4, 49)
     screen.text("S " .. params:string(self.env_name .. "_env_sustain_" .. self.sample_id))
     screen.move(4, 60)
