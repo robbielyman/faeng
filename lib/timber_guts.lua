@@ -58,7 +58,7 @@ specs.LFO_1_FREQ = ControlSpec.new(0.05, 20, "exp", 0, 2, "Hz")
 specs.LFO_2_FREQ = ControlSpec.new(0.05, 20, "exp", 0, 4, "Hz")
 options.LFO_WAVE_SHAPE = {"Sine", "Triangle", "Saw", "Square", "Random"}
 specs.LFO_FADE = ControlSpec.new(-10, 10, "lin", 0, 0, "s")
-options.FILTER_FREQ = ControlSpec.new(20, 20000, "exp", 0, 20000, "Hz")
+specs.FILTER_FREQ = ControlSpec.new(20, 20000, "exp", 0, 20000, "Hz")
 specs.FILTER_RESONANCE = ControlSpec.new(0, 1, "lin", 0, 0, "")
 specs.FILTER_TRACKING = ControlSpec.new(0, 2, "lin", 0, 1, ":1")
 specs.AMP_ENV_ATTACK = ControlSpec.new(0, 5, "lin", 0, 0, "s")
@@ -918,16 +918,18 @@ function Timber.draw_title(sample_id, show_sample_name)
     screen.text(string.format("%03d", sample_id))
     screen.move(23, 9)
 
-    local title
-    if samples_meta[sample_id].num_frames <= 0 then
-        title = samples_meta[sample_id].error_status or "No sample"
-        screen.level(3)
-    else
-        title = params:string("sample_" .. sample_id)
-        title = util.trim_string_to_width(title, max_title_width)
-    end
+    if show_sample_name or Timber.shift_mode then
+        local title
+        if samples_meta[sample_id].num_frames <= 0 then
+            title = samples_meta[sample_id].error_status or "No sample"
+            screen.level(3)
+        else
+            title = params:string("sample_" .. sample_id)
+            title = util.trim_string_to_width(title, max_title_width)
+        end
 
-    screen.text(title)
+        screen.text(title)
+    end
 
     screen.fill()
 end
@@ -1450,7 +1452,7 @@ function Timber.UI.FilterAmp:key(n, z)
             self:set_tab(self.tab_id % 2 + 1)
         elseif n == 3 then
             if self.tab_id == 1 then
-                params:set("filter_type_" .. self.sample_id, params:get("filter_type_" .. self.sample_id) % Timber.options.FILTER_TYPE + 1)
+                params:set("filter_type_" .. self.sample_id, params:get("filter_type_" .. self.sample_id) % #Timber.options.FILTER_TYPE + 1)
             end
         end
         Timber.views_changed_callback(self.sample_id)
@@ -1483,7 +1485,7 @@ function Timber.UI.FilterAmp:redraw()
     self.pan_dial:redraw()
     self.amp_dial:redraw()
 
-    if params:get("amp_" .. self.sample_id > 2) then
+    if params:get("amp_" .. self.sample_id) > 2 then
         screen.level(15)
         screen.move(108, 46)
         screen.text_center("!")
@@ -1932,7 +1934,7 @@ function Timber.UI.ModMatrix:redraw()
         params:get("filter_freq_mod_env_" .. self.sample_id),
         params:get("pan_mod_lfo_1_" .. self.sample_id),
         params:get("pan_mod_lfo_2_" .. self.sample_id),
-        params:get("pand_mod_env_" .. self.sample_id),
+        params:get("pan_mod_env_" .. self.sample_id),
         params:get("amp_mod_lfo_1_" .. self.sample_id),
         params:get("amp_mod_lfo_2_" .. self.sample_id),
         "/"

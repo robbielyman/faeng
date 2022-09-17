@@ -21,7 +21,6 @@ Page = 0
 MODS = 3
 Mod = 0
 SCREENS = 7
-Screen = 1
 SubSequins = 0
 Tracks = {}
 Active_Track = 1
@@ -270,19 +269,19 @@ function redraw()
         return
     end
     Screens:redraw()
-    if Screen == 1 then
+    if Screens.index == 1 then
         Sample_Setup_View:redraw()
-    elseif Screen == 2 then
+    elseif Screens.index == 2 then
         Waveform_View:redraw()
-    elseif Screen == 3 then
+    elseif Screens.index == 3 then
         Filter_Amp_View:redraw()
-    elseif Screen == 4 then
+    elseif Screens.index == 4 then
         Amp_Env_View:redraw()
-    elseif Screen == 5 then
+    elseif Screens.index == 5 then
         Mod_Env_View:redraw()
-    elseif Screen == 6 then
+    elseif Screens.index == 6 then
         LFOs_View:redraw()
-    elseif Screen == 7 then
+    elseif Screens.index == 7 then
         Mod_Matrix_View:redraw()
     end
     screen.update()
@@ -297,24 +296,21 @@ function enc(n, d)
             set_sample_id()
         else
             Screens:set_index_delta(d, false)
-            Screen = Screen + d
-            while Screen > SCREENS do Screen = Screen - SCREENS end
-            while Screen < 1 do Screen = Screen + SCREENS end
         end
     else
-        if Screen == 1 then
+        if Screens.index == 1 then
             Sample_Setup_View:enc(n, d)
-        elseif Screen == 2 then
+        elseif Screens.index == 2 then
             Waveform_View:enc(n, d)
-        elseif Screen == 3 then
+        elseif Screens.index == 3 then
             Filter_Amp_View:enc(n, d)
-        elseif Screen == 4 then
+        elseif Screens.index == 4 then
             Amp_Env_View:enc(n, d)
-        elseif Screen == 5 then
+        elseif Screens.index == 5 then
             Mod_Env_View:enc(n, d)
-        elseif Screen == 6 then
+        elseif Screens.index == 6 then
             LFOs_View:enc(n, d)
-        elseif Screen == 7 then
+        elseif Screens.index == 7 then
             Mod_Matrix_View:enc(n, d)
         end
     end
@@ -326,19 +322,19 @@ function key(n, z)
     if n == 1 then
         Timber.shift_mode = Keys[1] == 1
     end
-    if Screen == 1 then
+    if Screens.index == 1 then
         Sample_Setup_View:key(n, z)
-    elseif Screen == 2 then
+    elseif Screens.index == 2 then
         Waveform_View:key(n, z)
-    elseif Screen == 3 then
+    elseif Screens.index == 3 then
         Filter_Amp_View:key(n, z)
-    elseif Screen == 4 then
+    elseif Screens.index == 4 then
         Amp_Env_View:key(n, z)
-    elseif Screen == 5 then
+    elseif Screens.index == 5 then
         Mod_Env_View:key(n, z)
-    elseif Screen == 6 then
+    elseif Screens.index == 6 then
         LFOs_View:key(n, z)
-    elseif Screen == 7 then
+    elseif Screens.index == 7 then
         Mod_Matrix_View:key(n, z)
     end
     Screen_Dirty = true
