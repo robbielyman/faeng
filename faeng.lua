@@ -9,7 +9,7 @@
 
 engine.name = "Timber"
 
-local Timber = include("timber/lib/timber_engine")
+local Timber = include("lib/timber_guts")
 local sequins = require("sequins")
 local Lattice = require("lattice")
 local MusicUtil = require("musicutil")
@@ -125,9 +125,9 @@ function init()
     Screens = UI.Pages.new(0, 7)
     screen_redraw_metro = metro.init()
     screen_redraw_metro.event = function()
-        update()
         if Screen_Dirty then
             redraw()
+            update()
         end
     end
     params:add{
@@ -156,7 +156,6 @@ function init()
     params:add_separator()
     for i = 0, TRACKS * 7 - 1 do
         Timber.add_sample_params(i, true)
-        params:set('play_mode_' .. i, 4)
     end
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
@@ -177,8 +176,11 @@ function init()
 end
 
 function callback_sample(id)
-    if id then
-        params:set('play_mode_' .. id, 3)
+    if Timber.samples_meta[id].manual_load and
+        Timber.samples_meta[id].streaming == 0 and
+        Timber.samples_meta[id].num_frames / Timber.samples_meta[id].sample_rate < 1 and
+        string.find(string.lower(params:get("sample_" .. id)), "loop") == nil then
+        params:set("play_mode_" .. id, 3)
     end
 end
 
