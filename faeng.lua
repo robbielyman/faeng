@@ -269,6 +269,7 @@ function redraw()
         Timber.FileSelect.redraw()
         return
     end
+    Screens:redraw()
     if Screen == 1 then
         Sample_Setup_View:redraw()
     elseif Screen == 2 then
