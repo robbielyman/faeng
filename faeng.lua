@@ -62,7 +62,6 @@ function init()
             patterns[j] = Pattern_Time.new()
             patterns[j].process = function(event)
                 params:set(event.prefix .. event.id, event.val)
-                Arc_Dirty = true
             end
         end
         for j = 1, PAGES do
@@ -117,13 +116,14 @@ function init()
     -- Grid setup
     Grid = grid.connect(1)
     Grid.key = grid_key
-    grid_redraw_metro = metro.init()
-    grid_redraw_metro.event = function()
+    grid_arc_redraw_metro = metro.init()
+    grid_arc_redraw_metro.event = function()
         if Grid.device and Grid_Dirty then
             grid_redraw()
         end
+        Arc:redraw()
     end
-    grid_redraw_metro:start(1/25)
+    grid_arc_redraw_metro:start(1/25)
     lattice:new_pattern{
         division = 1/8,
         action = function()
@@ -175,7 +175,7 @@ function init()
         "amp_env_attack_",
         "amp_env_decay_",
         "amp_env_sustain_",
-        "amp_env_attack_",
+        "amp_env_release_",
         "mod_env_attack_",
         "mod_env_decay_",
         "mod_env_sustain_",
@@ -196,15 +196,6 @@ function init()
     Arc:map_encoder(3, "amp_env_sustain_" .. get_current_sample(), true)
     Arc:map_encoder(4, "amp_env_release_" .. get_current_sample(), true)
     Arc:add_params()
-    arc_redraw_metro = metro.init()
-    arc_redraw_metro.event = function()
-        if Arc_Dirty then
-            Arc:redraw()
-            Arc_Dirty = false
-        end
-    end
-    arc_redraw_metro:start(1/15)
-    Arc_Dirty = true
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
     Filter_Amp_View     = Timber.UI.FilterAmp.new(get_current_sample())
@@ -230,19 +221,19 @@ function callback_watch(id, prefix, x)
         prefix = prefix,
         val = x
     }
-    local track = id // 7
+    local track = id // 7 + 1
     for i = 1, 4 do
         Tracks[track].pattern_times[i]:watch(event)
     end
 end
 
 function callback_sample(id)
-    if Timber.samples_meta[id].manual_load and
-        Timber.samples_meta[id].streaming == 0 and
-        Timber.samples_meta[id].num_frames / Timber.samples_meta[id].sample_rate < 1 and
-        string.find(string.lower(params:get("sample_" .. id)), "loop") == nil then
-        params:set("play_mode_" .. id, 3)
-    end
+   -- if Timber.samples_meta[id].manual_load and
+   --     Timber.samples_meta[id].streaming == 0 and
+   --     Timber.samples_meta[id].num_frames / Timber.samples_meta[id].sample_rate < 1 and
+   --     string.find(string.lower(params:get("sample_" .. id)), "loop") == nil then
+   --     params:set("play_mode_" .. id, 3)
+   -- end
 end
 
 function callback_screen(id)
@@ -330,7 +321,6 @@ function set_sample_id()
             end
         end
     end
-    Arc_Dirty = true
     Screen_Dirty = true
 end
 
@@ -414,7 +404,6 @@ function key(n, z)
         Mod_Matrix_View:key(n, z)
     end
     Screen_Dirty = true
-    Arc_Dirty = true
 end
 
 -- grid display
@@ -1502,4 +1491,8 @@ function Track:set_sample_id(n)
         n = n + 7
     end
     self.sample_id = n
+end
+
+function cleanup()
+    metro.free_all()
 end

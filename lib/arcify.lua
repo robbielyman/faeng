@@ -200,7 +200,7 @@ function Arcify.new(arc_obj, update_self, update_rate)
     ap.encoders_ = default_encoder_state()
     ap.shift_encoders_ = default_encoder_state()
     ap.is_shifted_ = false
-    ap.update_self_ = do_update_self or true -- create a callback by default
+    ap.update_self_ = update_self
     ap.update_rate_ = update_rate or 1 / 25 -- 25 fps default
 
     if ap.update_self_ then
