@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 0.2.2
+-- v 0.3
 -- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
@@ -14,10 +14,13 @@ local sequins = require("sequins")
 local Lattice = require("lattice")
 local MusicUtil = require("musicutil")
 local UI = require("ui")
+local Arcify = include("lib/arcify")
+local Pattern_Time = require("pattern_time")
 
-TRACKS = 16
+TRACKS = 7
 PAGES = 6
 Page = 0
+Alt_Page = false
 MODS = 3
 Mod = 0
 SCREENS = 7
@@ -54,6 +57,14 @@ function init()
         local divisions = {}
         local probabilities = {}
         local lengths = {}
+        local patterns = {}
+        for j = 1, 4 do
+            patterns[j] = Pattern_Time.new()
+            patterns[j].process = function(event)
+                params:set(event.prefix .. event.id, event.val)
+                Arc_Dirty = true
+            end
+        end
         for j = 1, PAGES do
             data[j] = {}
             divisions[j] = {}
@@ -101,7 +112,7 @@ function init()
             probabilities[PAGES + 1][k] = 4
             lengths[k] = 4
         end
-        Tracks[i] = Track.new(i, data, lattice, divisions, probabilities, lengths, false)
+        Tracks[i] = Track.new(i, data, lattice, divisions, probabilities, lengths, false, patterns)
     end
     -- Grid setup
     Grid = grid.connect(1)
@@ -150,12 +161,50 @@ function init()
         action = function() build_scale() end
     }
     build_scale() -- builds initial scale
-    Timber.options.PLAY_MODE_BUFFER_DEFAULT = 4
     Timber.add_params()
     params:add_separator()
+    local arc_ = arc.connect(1)
+    Arc = Arcify.new(arc_, false)
+    Arc_Params = {
+        "start_frame_",
+        "end_frame_",
+        "filter_freq_",
+        "filter_resonance_",
+        "pan_",
+        "amp_",
+        "amp_env_attack_",
+        "amp_env_decay_",
+        "amp_env_sustain_",
+        "amp_env_attack_",
+        "mod_env_attack_",
+        "mod_env_decay_",
+        "mod_env_sustain_",
+        "mod_env_release_",
+    }
     for i = 0, TRACKS * 7 - 1 do
-        Timber.add_sample_params(i, true)
+        Timber.add_sample_params(i)
+        for _,p in ipairs(Arc_Params) do
+            Arc:register(p .. i)
+        end
     end
+    Arc:map_encoder(1, "start_frame_" .. get_current_sample(), false)
+    Arc:map_encoder(2, "end_frame_" .. get_current_sample(), false)
+    Arc:map_encoder(3, "pan_" .. get_current_sample(), false)
+    Arc:map_encoder(4, "filter_freq_" .. get_current_sample(), false)
+    Arc:map_encoder(1, "amp_env_attack_" .. get_current_sample(), true)
+    Arc:map_encoder(2, "amp_env_decay_" .. get_current_sample(), true)
+    Arc:map_encoder(3, "amp_env_sustain_" .. get_current_sample(), true)
+    Arc:map_encoder(4, "amp_env_release_" .. get_current_sample(), true)
+    Arc:add_params()
+    arc_redraw_metro = metro.init()
+    arc_redraw_metro.event = function()
+        if Arc_Dirty then
+            Arc:redraw()
+            Arc_Dirty = false
+        end
+    end
+    arc_redraw_metro:start(1/15)
+    Arc_Dirty = true
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
     Filter_Amp_View     = Timber.UI.FilterAmp.new(get_current_sample())
@@ -169,9 +218,22 @@ function init()
     Timber.play_positions_changed_callback = callback_waveform
     Timber.views_changed_callback = callback_screen
     Timber.sample_changed_callback = callback_sample
+    Timber.watch_param_callback = callback_watch
     screen_redraw_metro:start(1/15)
     screen.aa(1)
     lattice:start()
+end
+
+function callback_watch(id, prefix, x)
+    local event = {
+        id = id,
+        prefix = prefix,
+        val = x
+    }
+    local track = id // 7
+    for i = 1, 4 do
+        Tracks[track].pattern_times[i]:watch(event)
+    end
 end
 
 function callback_sample(id)
@@ -256,6 +318,19 @@ function set_sample_id()
     Mod_Env_View:set_sample_id(get_current_sample())
     LFOs_View:set_sample_id(get_current_sample())
     Mod_Matrix_View:set_sample_id(get_current_sample())
+    for i = 1, 4 do
+        if Arc.encoders_[i] then
+            for key,val in ipairs(Arc_Params) do
+                if string.find(Arc.encoders_[i], val) then
+                    Arc:map_encoder(Arc_Params[key] .. get_current_sample(), false)
+                end
+                if string.find(Arc.shift_encoders_[i], val) then
+                    Arc:map_encoder(Arc_Params[key] .. get_current_sample(), true)
+                end
+            end
+        end
+    end
+    Arc_Dirty = true
     Screen_Dirty = true
 end
 
@@ -318,6 +393,7 @@ function enc(n, d)
 end
 
 function key(n, z)
+    Arc:handle_shift(n, z)
     Keys[n] = z
     if n == 1 then
         Timber.shift_mode = Keys[1] == 1
@@ -338,6 +414,7 @@ function key(n, z)
         Mod_Matrix_View:key(n, z)
     end
     Screen_Dirty = true
+    Arc_Dirty = true
 end
 
 -- grid display
@@ -437,15 +514,25 @@ end
 function page_view()
     if Page == 0 then
         -- tracks page
-        Grid:led(1, 1, 4)
-        for x = 1, 16 do
-            local pattern = Tracks[x].values[PAGES + 1]
-            Grid:led(x, 4, 4)
-            Grid:led(x, 5, Tracks[x].muted and 4 or 9)
-            if Active_Track == x then
-                Grid:led(x, 6, Tracks[x].values[1][pattern] == 1 and 15 or 12)
+        Grid:led(16, 1, 4)
+        for y = 1, 7 do
+            local pattern = Tracks[y].values[PAGES + 1]
+            Grid:led(3, y, 4)
+            Grid:led(2, y, Tracks[y].muted and 4 or 9)
+            if Active_Track == y then
+                Grid:led(1, y, Tracks[y].values[1][pattern] == 1 and 15 or 12)
             else
-                Grid:led(x, 6, Tracks[x].values[1][pattern] == 1 and 9 or 4)
+                Grid:led(1, y, Tracks[y].values[1][pattern] == 1 and 9 or 4)
+            end
+            for x = 4, 7 do
+                local i = x - 3
+                if Tracks[y].pattern_times[i].play == 1 then
+                    Grid:led(x, y, Dance_Index % 2 == 1 and 15 or 9)
+                elseif Tracks[y].pattern_times[i].rec == 1 then
+                    Grid:led(x, y, 15)
+                else
+                    Grid:led(x, y, 4)
+                end
             end
         end
         return
@@ -691,35 +778,56 @@ function grid_key(x, y, z)
     local pattern = track.values[PAGES + 1]
     if Page == 0 then
         -- tracks page
-        if y == 6 then
+        if x == 1 then
             -- select track
             if z == 0 then
-                Active_Track = x
+                Active_Track = y
                 set_sample_id()
             end
             Presses[x][y] = z
             Grid_Dirty = true
-        elseif y == 5 then
+        elseif x == 2 then
             -- mute/unmute track
             if z == 0 then
-                Tracks[x].muted = not Tracks[x].muted
+                Tracks[y].muted = not Tracks[y].muted
             end
             Presses[x][y] = z
             Grid_Dirty = true
-        elseif y == 4 then
+        elseif x == 3 then
             -- reset track
             if z == 0 then
                 for i = 1, PAGES + 1 do
                     if i <= PAGES then
-                        Tracks[x]:increment(i, pattern, true)
+                        Tracks[y]:increment(i, pattern, true)
                     else
-                        Tracks[x]:increment(i, nil, true)
+                        Tracks[y]:increment(i, nil, true)
                     end
                 end
             end
             Presses[x][y] = z
             Grid_Dirty = true
-        elseif y == 1 and x == 1 then
+        elseif x >= 4 and x <= 7 then
+            -- pattern recorders
+            if z == 0 and Press_Counter[x][y] then
+                local i = x - 3
+                clock.cancel(Press_Counter[x][y])
+                if Tracks[y].pattern_times[i].play == 0 and Tracks[y].pattern_times[i].rec == 0 then
+                    -- first record
+                    Tracks[y].pattern_times[i]:rec_start()
+                elseif Tracks[y].pattern_times[i].rec == 1 then
+                    -- then play
+                    Tracks[y].pattern_times:rec_stop()
+                    Tracks[y].pattern_times:play()
+                elseif Tracks[y].pattern_times[i].play == 1 then
+                    -- then stop
+                    Tracks[y].pattern_times:stop()
+                end
+            elseif z == 1 then
+                Press_Counter[x][y] = clock.run(grid_long_press, x, y)
+            end
+            Presses[x][y] = z
+            Grid_Dirty = true
+        elseif y == 1 and x == 16 then
             -- reset all tracks
             if z == 0 then
                 for i = 1, TRACKS do
@@ -1160,6 +1268,11 @@ function grid_long_press(x, y)
     elseif Page > PAGES and y == 4 then
         SubSequins = x
         Grid_Dirty = true
+    elseif Page == 0 then
+        if x >= 4 and x <= 7 then
+            local i = x - 3
+            Tracks[y].pattern_times[i]:clear()
+        end
     elseif Page == 1 and y == 2 then
         SubSequins = x
         Grid_Dirty = true
@@ -1178,7 +1291,7 @@ end
 -- Track functions
 Track = {}
 
-function Track.new(id, data, host_lattice, divisions, probabilities, lengths, muted)
+function Track.new(id, data, host_lattice, divisions, probabilities, lengths, muted, patterns)
     local t = setmetatable({}, { __index = Track})
     t.id = id
     t.sample_id = 0
@@ -1189,6 +1302,7 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
     t.muted = muted
     t.lengths = lengths
     t.bounds = {}
+    t.pattern_times = patterns
     t.patterns = {}
     t.indices = {}
     t.values = {}

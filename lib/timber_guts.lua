@@ -20,6 +20,7 @@ Timber.meta_changed_callback = function() end
 Timber.waveform_changed_callback = function() end
 Timber.play_positions_changed_callback = function() end
 Timber.views_changed_callback = function() end
+Timber.watch_param_callback = function() end
 
 Timber.setup_params_dirty = false
 Timber.filter_dirty = false
@@ -506,7 +507,7 @@ function Timber.add_sample_params(id)
     params:add{
         type = "trigger",
         id = "clear_" .. id,
-        name = "Claer",
+        name = "Clear",
         action = function()
             Timber.clear_samples(id)
             Timber.views_changed_callback(id)
@@ -561,8 +562,9 @@ function Timber.add_sample_params(id)
         name = "Start",
         controlspec = ControlSpec.new(0, MAX_FRAMES, "lin", 1, 0),
         formatter = format_frame_number(id),
-        action = function()
+        action = function(x)
             set_marker(id, "start_frame_")
+            Timber.watch_param_callback(id, "start_frame_", x)
         end
     }
     params:add{
@@ -571,8 +573,9 @@ function Timber.add_sample_params(id)
         name = "End",
         controlspec = ControlSpec.new(0, MAX_FRAMES, "lin", 1, MAX_FRAMES),
         formatter = format_frame_number(id),
-        action = function()
+        action = function(x)
             set_marker(id, "end_frame_")
+            Timber.watch_param_callback(id, "end_frame_", x)
         end
     }
     params:add_separator("freq_mod_" .. id, "Freq Mod")
@@ -630,6 +633,7 @@ function Timber.add_sample_params(id)
             filter_last_edited = {id = id, param = "filter_freq_" .. id}
             Timber.filter_dirty = true
             Timber.views_changed_callback(id)
+            Timber.watch_param_callback(id, "filter_freq_", value)
         end
     }
     params:add{
@@ -642,6 +646,7 @@ function Timber.add_sample_params(id)
             filter_last_edited = {id = id, param = "filter_resonance_" .. id}
             Timber.filter_dirty = true
             Timber.views_changed_callback(id)
+            Timber.watch_param_callback(id, "filter_resonance_", value)
         end
     }
     params:add{
@@ -780,6 +785,7 @@ function Timber.add_sample_params(id)
             engine.ampAttack(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id, "amp_env_attack_", value)
         end
     }
     params:add{
@@ -792,6 +798,7 @@ function Timber.add_sample_params(id)
             engine.ampDecay(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id, "amp_env_decay_", value)
         end
     }
     params:add{
@@ -803,6 +810,7 @@ function Timber.add_sample_params(id)
             engine.ampSustain(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id, "amp_env_sustain_", value)
         end
     }
     params:add{
@@ -815,6 +823,7 @@ function Timber.add_sample_params(id)
             engine.ampRelease(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id, "amp_env_release_", value)
         end
     }
 
@@ -829,6 +838,7 @@ function Timber.add_sample_params(id)
             engine.modAttack(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id)
         end
     }
     params:add{
@@ -841,6 +851,7 @@ function Timber.add_sample_params(id)
             engine.modDecay(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id)
         end
     }
     params:add{
@@ -852,6 +863,7 @@ function Timber.add_sample_params(id)
             engine.modSustain(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id)
         end
     }
     params:add{
@@ -864,6 +876,7 @@ function Timber.add_sample_params(id)
             engine.modRelease(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
+            Timber.watch_param_callback(id)
         end
     }
 
@@ -1441,6 +1454,12 @@ function Timber.UI.FilterAmp:enc(n, delta)
             params:delta("filter_freq_" .. self.sample_id, delta)
         elseif n == 3 then
             params:delta("filter_resonance_" .. self.sample_id, delta)
+        end
+    elseif self.tab_id == 2 then
+        if n == 2 then
+            params:delta("pan_" .. self.sample_id, delta)
+        elseif n == 3 then
+            params:delta("amp_" .. self.sample_id, delta)
         end
     end
     Timber.views_changed_callback(self.sample_id)
