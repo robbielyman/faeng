@@ -14,7 +14,7 @@ local sequins = require("sequins")
 local Lattice = require("lattice")
 local MusicUtil = require("musicutil")
 local UI = require("ui")
-local Arc = include("lib/arc_guts")
+local Arc_Guts = include("lib/arc_guts")
 local Pattern_Time = require("pattern_time")
 
 TRACKS = 7
@@ -121,7 +121,7 @@ function init()
         if Grid.device and Grid_Dirty then
             grid_redraw()
         end
-        arc:redraw()
+        Arc:redraw()
     end
     lattice:new_pattern{
         division = 1/8,
@@ -162,7 +162,7 @@ function init()
     build_scale() -- builds initial scale
     Timber.add_params()
     params:add_separator("arc")
-    arc = Arc.new()
+    Arc = Arc_Guts.new()
     Arc_Params = {
         "start_frame_",
         "end_frame_",
@@ -237,7 +237,7 @@ function init()
     lattice:start()
 end
 
-function Arc:get_param(i)
+function Arc_Guts:get_param(i)
     if self.shift_mode then
         return params:lookup_param(Arc_Params[params:get("arc_ring_shift_" .. i)] .. get_current_sample())
     else
@@ -413,7 +413,7 @@ function enc(n, d)
 end
 
 function key(n, z)
-    arc:key(n, z)
+    Arc:key(n, z)
     Keys[n] = z
     if n == 1 then
         Timber.shift_mode = Keys[1] == 1
@@ -1524,5 +1524,6 @@ function Track:set_sample_id(n)
 end
 
 function cleanup()
+    Arc.arc:cleanup()
     metro.free_all()
 end

@@ -24,7 +24,7 @@ end
 
 function Arc:delta(n, d)
     if self:get_param(n) then
-        self:get_param(n):delta(d * 0.01)
+        self:get_param(n):delta(d * 0.1)
     end
 end
 
@@ -33,9 +33,8 @@ function Arc:redraw()
     for i = 1, 4 do
         local param = self:get_param(i)
         if param then
-            local val = util.linlin(param.controlspec.minval, param.controlspec.maxval, 3, 61, param:get())
-            self.arc:segment(i, 3, 61, 3)
-            self.arc:segment(i, val - .1, val + .1, 15)
+            local val = util.linlin(param.controlspec.minval, param.controlspec.maxval, .2*math.pi, 1.8*math.pi, param:get())
+            self.arc:segment(i, val - .1 + math.pi, val + .1 + math.pi, 15)
         end
     end
     self.arc:refresh()
