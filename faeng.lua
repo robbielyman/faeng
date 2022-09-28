@@ -123,7 +123,6 @@ function init()
         end
         arc:redraw()
     end
-    grid_arc_redraw_metro:start(1/25)
     lattice:new_pattern{
         division = 1/8,
         action = function()
@@ -217,9 +216,6 @@ function init()
     end
     for i = 0, TRACKS * 7 - 1 do
         Timber.add_sample_params(i)
-        for _,p in ipairs(Arc_Params) do
-            Arc:register(p .. i)
-        end
     end
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
@@ -236,15 +232,16 @@ function init()
     Timber.sample_changed_callback = callback_sample
     Timber.watch_param_callback = callback_watch
     screen_redraw_metro:start(1/15)
+    grid_arc_redraw_metro:start(1/25)
     screen.aa(1)
     lattice:start()
 end
 
 function Arc:get_param(i)
     if self.shift_mode then
-        return Arc_Params[params:get("arc_ring_shift_" .. i)] .. get_current_sample()
+        return params:lookup_param(Arc_Params[params:get("arc_ring_shift_" .. i)] .. get_current_sample())
     else
-        return Arc_Params[params:get("arc_ring_" .. i)] .. get_current_sample()
+        return params:lookup_param(Arc_Params[params:get("arc_ring_" .. i)] .. get_current_sample())
     end
 end
 
@@ -416,7 +413,7 @@ function enc(n, d)
 end
 
 function key(n, z)
-    Arc:handle_shift(n, z)
+    arc:key(n, z)
     Keys[n] = z
     if n == 1 then
         Timber.shift_mode = Keys[1] == 1
