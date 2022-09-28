@@ -14,7 +14,7 @@ local sequins = require("sequins")
 local Lattice = require("lattice")
 local MusicUtil = require("musicutil")
 local UI = require("ui")
-local Arcify = include("lib/arcify")
+local Arc = include("lib/arc_guts")
 local Pattern_Time = require("pattern_time")
 
 TRACKS = 7
@@ -121,7 +121,7 @@ function init()
         if Grid.device and Grid_Dirty then
             grid_redraw()
         end
-        Arc:redraw()
+        arc:redraw()
     end
     grid_arc_redraw_metro:start(1/25)
     lattice:new_pattern{
@@ -162,9 +162,8 @@ function init()
     }
     build_scale() -- builds initial scale
     Timber.add_params()
-    params:add_separator()
-    local arc_ = arc.connect(1)
-    Arc = Arcify.new(arc_, false)
+    params:add_separator("arc")
+    arc = Arc.new()
     Arc_Params = {
         "start_frame_",
         "end_frame_",
@@ -181,21 +180,47 @@ function init()
         "mod_env_sustain_",
         "mod_env_release_",
     }
+    Arc_Params.OPTIONS = {
+        "start frame",
+        "end frame",
+        "filter freq",
+        "filter resonance",
+        "pan",
+        "amp",
+        "amp env attack",
+        "amp env decay",
+        "amp env sustain",
+        "amp env release",
+        "mod env attack",
+        "mod env decay",
+        "mod env sustain",
+        "mod env release"
+    }
+    Arc_Params.DEFAULTS = {1, 2, 5, 3, 7, 8, 9, 10}
+    for i = 1, 4 do
+        params:add{
+            type    = "option",
+            id      = "arc_ring_" .. i,
+            name    = "arc ring " .. i,
+            options = Arc_Params.OPTIONS,
+            default = Arc_Params.DEFAULTS[i]
+        }
+    end
+    for i = 1, 4 do
+        params:add{
+            type    = "option",
+            id      = "arc_ring_shift_" .. i,
+            name    = "shift arc ring " .. i,
+            options = Arc_Params.OPTIONS,
+            default = Arc_Params.DEFAULTS[4 + i]
+        }
+    end
     for i = 0, TRACKS * 7 - 1 do
         Timber.add_sample_params(i)
         for _,p in ipairs(Arc_Params) do
             Arc:register(p .. i)
         end
     end
-    Arc:map_encoder(1, "start_frame_" .. get_current_sample(), false)
-    Arc:map_encoder(2, "end_frame_" .. get_current_sample(), false)
-    Arc:map_encoder(3, "pan_" .. get_current_sample(), false)
-    Arc:map_encoder(4, "filter_freq_" .. get_current_sample(), false)
-    Arc:map_encoder(1, "amp_env_attack_" .. get_current_sample(), true)
-    Arc:map_encoder(2, "amp_env_decay_" .. get_current_sample(), true)
-    Arc:map_encoder(3, "amp_env_sustain_" .. get_current_sample(), true)
-    Arc:map_encoder(4, "amp_env_release_" .. get_current_sample(), true)
-    Arc:add_params()
     Sample_Setup_View   = Timber.UI.SampleSetup.new(get_current_sample())
     Waveform_View       = Timber.UI.Waveform.new(get_current_sample())
     Filter_Amp_View     = Timber.UI.FilterAmp.new(get_current_sample())
@@ -213,6 +238,14 @@ function init()
     screen_redraw_metro:start(1/15)
     screen.aa(1)
     lattice:start()
+end
+
+function Arc:get_param(i)
+    if self.shift_mode then
+        return Arc_Params[params:get("arc_ring_shift_" .. i)] .. get_current_sample()
+    else
+        return Arc_Params[params:get("arc_ring_" .. i)] .. get_current_sample()
+    end
 end
 
 function callback_watch(id, prefix, x)
@@ -313,10 +346,10 @@ function set_sample_id()
         if Arc.encoders_[i] then
             for key,val in ipairs(Arc_Params) do
                 if string.find(Arc.encoders_[i], val) then
-                    Arc:map_encoder(Arc_Params[key] .. get_current_sample(), false)
+                    Arc:map_encoder(i, Arc_Params[key] .. get_current_sample(), false)
                 end
                 if string.find(Arc.shift_encoders_[i], val) then
-                    Arc:map_encoder(Arc_Params[key] .. get_current_sample(), true)
+                    Arc:map_encoder(i, Arc_Params[key] .. get_current_sample(), true)
                 end
             end
         end
@@ -805,11 +838,11 @@ function grid_key(x, y, z)
                     Tracks[y].pattern_times[i]:rec_start()
                 elseif Tracks[y].pattern_times[i].rec == 1 then
                     -- then play
-                    Tracks[y].pattern_times:rec_stop()
-                    Tracks[y].pattern_times:play()
+                    Tracks[y].pattern_times[i]:rec_stop()
+                    Tracks[y].pattern_times[i]:start()
                 elseif Tracks[y].pattern_times[i].play == 1 then
                     -- then stop
-                    Tracks[y].pattern_times:stop()
+                    Tracks[y].pattern_times[i]:stop()
                 end
             elseif z == 1 then
                 Press_Counter[x][y] = clock.run(grid_long_press, x, y)
