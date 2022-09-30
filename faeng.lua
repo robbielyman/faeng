@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 0.3
+-- v 0.3.1
 -- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
@@ -112,6 +112,22 @@ function init()
             lengths[k] = 4
         end
         Tracks[i] = Track.new(i, data, lattice, divisions, probabilities, lengths, false, patterns)
+    end
+    -- params!
+    params.action_read = function(_,_,number)
+        local tracks_data = tab.load(_path.data .. "/faeng/pset_track_data_" .. number .. ".data")
+        import_tracks(tracks_data)
+    end
+    params.action_write = function(_,_,number)
+        if not util.file_exists(_path.data .. "/faeng") then
+            util.os_capture(_path.data .. "/faeng")
+        end
+        tab.save(export_tracks(), _path.data .. "/faeng/pset_track_data_" .. number .. ".data")
+    end
+    params.action_delete = function(_,_,number)
+        if util.file_exists(_path.data .. "/faeng/pset_track_data_" .. number .. ".data") then
+            util.os_capture("rm " .. _path.data .. "/faeng/pset_track_data_" .. number .. ".data")
+        end
     end
     -- Grid setup
     Grid = grid.connect(1)
@@ -1521,6 +1537,49 @@ function Track:set_sample_id(n)
         n = n + 7
     end
     self.sample_id = n
+end
+
+function export_tracks()
+    local data = {}
+    for i = 1, TRACKS do
+        local track         = Tracks[i]
+        data[i].sample_id   = track.sample_id
+        data[i].probabilities = track.probabilities
+        data[i].divisions   = track.divisions
+        data[i].swings      = track.swings
+        data[i].muted       = track.muted
+        data[i].lengths     = track.lengths
+        data[i].bounds      = track.bounds
+        data[i].selected    = track.selected
+        data[i].data        = track.data
+    end
+    return data
+end
+
+function import_tracks(data)
+    for i = 1, TRACKS do
+        local datum = data[i]
+        Tracks[i].sample_id     = datum.sample_id
+        Tracks[i].probabilities = datum.probabilities
+        Tracks[i].divisions     = datum.divisions
+        Tracks[i].swings        = datum.swings
+        Tracks[i].muted         = datum.muted
+        Tracks[i].lengths       = datum.lengths
+        Tracks[i].bounds        = datum.bounds
+        Tracks[i].selected      = datum.selected
+        Tracks[i].data          = datum.data
+        for j = 1, PAGES do
+            Tracks[i]:update(j)
+        end
+        for j = 1, PAGES + 1 do
+            local pattern = Tracks[i].values[PAGES + 1]
+            if j ~= PAGES + 1 then
+                Tracks[i]:make_sequins(j, pattern)
+            else
+                Tracks[i]:make_sequins(j)
+            end
+        end
+    end
 end
 
 function cleanup()
