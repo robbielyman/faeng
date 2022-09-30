@@ -1542,6 +1542,7 @@ end
 function export_tracks()
     local data = {}
     for i = 1, TRACKS do
+        data[i] = {}
         local track         = Tracks[i]
         data[i].sample_id   = track.sample_id
         data[i].probabilities = track.probabilities
