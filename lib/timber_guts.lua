@@ -1023,9 +1023,9 @@ function Timber.UI.SampleSetup:set_sample_id(id)
     self.move_active = false
     self.copy_active = false
     self.copy_params_active = false
-    self.copy_to_first = self.sample_id // 7
-    self.copy_to_last = self.sample_id // 7
-    self.move_to = self.sample_id // 7
+    self.copy_to_first = 7 * (self.sample_id // 7)
+    self.copy_to_last = 7 * (self.sample_id // 7)
+    self.move_to = 7 * (self.sample_id // 7)
     Timber.views_changed_callback(id)
 end
 
@@ -1061,27 +1061,27 @@ function Timber.UI.SampleSetup:enc(n, delta)
         if n == 2 or n == 3 then
             self.move_to = util.clamp(
                 util.round(self.move_to + delta),
-                self.sample_id // 7,
-                self.sample_id // 7 + 6
+                7 * (self.sample_id // 7),
+                7 * (self.sample_id // 7) + 6
             )
         end
     elseif self.copy_active or self.copy_params_active then
         if n == 2 then
             self.copy_to_first = util.clamp(
                 util.round(self.copy_to_first + delta),
-                self.sample_id // 7,
-                self.sample_id // 7 + 6
+                7 * (self.sample_id // 7),
+                7 * (self.sample_id // 7) + 6
             )
             self.copy_to_last = util.clamp(
                 self.copy_to_last,
                 self.copy_to_first,
-                self.sample_id // 7 + 6
+                7 * (self.sample_id // 7) + 6
             )
         elseif n == 3 then
             self.copy_to_last = util.clamp(
                 util.round(self.copy_to_last + delta),
                 self.copy_to_first,
-                self.sample_id // 7 + 6
+                7 * (self.sample_id // 7) + 6
             )
         end
     else
@@ -1099,38 +1099,38 @@ function Timber.UI.SampleSetup:key(n, z)
         if self.move_active then
             if n == 2 then
                 self.move_active = false
-                self.move_to = self.sample_id // 7
+                self.move_to = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             elseif n == 3 then
                 Timber.move_sample(self.sample_id, self.move_to)
                 self.move_active = false
-                self.move_to = self.sample_id // 7
+                self.move_to = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             end
         elseif self.copy_active then
             if n == 2 then
                 self.copy_active = false
-                self.copy_to_first = self.sample_id // 7
-                self.copy_to_last = self.sample_id // 7
+                self.copy_to_first = 7 * (self.sample_id // 7)
+                self.copy_to_last = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             elseif n == 3 then
                 Timber.copy_sample(self.sample_id, self.copy_to_first, self.copy_to_last)
                 self.copy_active = false
-                self.copy_to_first = self.sample_id //7
-                self.copy_to_last = self.sample_id // 7
+                self.copy_to_first = 7 * (self.sample_id //7)
+                self.copy_to_last = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             end
         elseif self.copy_params_active then
             if n == 2 then
                 self.copy_params_active = false
-                self.copy_to_first = self.sample_id // 7
-                self.copy_to_last = self.sample_id // 7
+                self.copy_to_first = 7 * (self.sample_id // 7)
+                self.copy_to_last = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             elseif n == 3 then
                 Timber.copy_params(self.sample_id, self.copy_to_first, self.copy_to_last, {})
                 self.copy_params_active = false
-                self.copy_to_first = self.sample_id // 7
-                self.copy_to_last = self.sample_id // 7
+                self.copy_to_first = 7 * (self.sample_id // 7)
+                self.copy_to_last = 7 * (self.sample_id // 7)
                 Timber.views_changed_callback(self.sample_id)
             end
         else
