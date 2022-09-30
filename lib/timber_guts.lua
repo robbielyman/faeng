@@ -169,7 +169,7 @@ local function sample_loaded(id, streaming, num_frames, num_channels, sample_rat
 
         engine.startFrame(id, params:get("start_frame_" .. id))
         engine.endFrame(id, params:get("end_frame_" .. id))
-        engine.play_mode(id, 3)
+        engine.playMode(id, 3)
     end
     waveform_last_edited = nil
     lfos_last_edited = nil

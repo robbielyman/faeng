@@ -355,18 +355,6 @@ function set_sample_id()
     Mod_Env_View:set_sample_id(get_current_sample())
     LFOs_View:set_sample_id(get_current_sample())
     Mod_Matrix_View:set_sample_id(get_current_sample())
-    for i = 1, 4 do
-        if Arc.encoders_[i] then
-            for key,val in ipairs(Arc_Params) do
-                if string.find(Arc.encoders_[i], val) then
-                    Arc:map_encoder(i, Arc_Params[key] .. get_current_sample(), false)
-                end
-                if string.find(Arc.shift_encoders_[i], val) then
-                    Arc:map_encoder(i, Arc_Params[key] .. get_current_sample(), true)
-                end
-            end
-        end
-    end
     Screen_Dirty = true
 end
 
@@ -1203,7 +1191,7 @@ function grid_key(x, y, z)
                                         ratchet_amount = 0
                                     end
                                     datum = (ratchets << 2) | ratchet_amount
-                                    track.data[Page][SubSequins][x] = datum
+                                    track.data[Page][pattern][SubSequins][x] = datum
                                 end
                             end
                         end
