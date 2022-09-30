@@ -139,10 +139,35 @@ function init()
         end
         Arc:redraw()
     end
+    local dance_counter = 0
+    Reset_Flag = 0
     lattice:new_pattern{
-        division = 1/8,
+        division = 1/32,
         action = function()
-            Dance_Index = Dance_Index % 16 + 1
+            dance_counter = dance_counter % 4 + 1
+            if dance_counter == 1 then
+                Dance_Index = Dance_Index % 16 + 1
+            end
+            if dance_counter % 2 == 0 and Reset_Flag > 0 then
+                for i = 1,TRACKS do
+                    for j = 1,PAGES+1 do
+                        Tracks[i].patterns[j]:stop()
+                        if j <= PAGES then
+                            Tracks[i]:increment(j, Tracks[i].values[PAGES + 1], true)
+                        else
+                            Tracks[i]:increment(j, nil, true)
+                        end
+                    end
+                end
+                Reset_Flag = -1
+            elseif dance_counter % 2 == 1 and Reset_Flag < 0 then
+                for i = 1,TRACKS do
+                    for j = 1,PAGES+1 do
+                        Tracks[i].patterns[j]:start()
+                    end
+                end
+                Reset_Flag = 0
+            end
             Grid_Dirty = true
         end
     }
@@ -853,15 +878,7 @@ function grid_key(x, y, z)
         elseif y == 1 and x == 16 then
             -- reset all tracks
             if z == 0 then
-                for i = 1, TRACKS do
-                    for j = 1, PAGES + 1 do
-                        if j <= PAGES then
-                            Tracks[i]:increment(j, pattern, true)
-                        else
-                            Tracks[i]:increment(j, nil, true)
-                        end
-                    end
-                end
+                Reset_Flag = 1
             end
             Presses[x][y] = z
             Grid_Dirty = true
