@@ -1811,7 +1811,7 @@ function Track:play_note()
 end
 
 function Track:set_sample_id(n)
-    while n > 7 do
+    while n > 6 do
         n = n - 7
     end
     while n < 0 do
