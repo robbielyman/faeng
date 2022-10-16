@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 0.3.1
+-- v 0.4
 -- llllllll.co/t/faeng-is-a-sequencer/
 
 engine.name = "Timber"
@@ -34,7 +34,7 @@ Scale_Names = {}
 for i = 1, #MusicUtil.SCALES do
   table.insert(Scale_Names, MusicUtil.SCALES[i].name)
 end
-Velocities = {0.1, 0.2, 0.3, 0.6, 1.0}
+Velocities = {0.1, 0.2, 0.3, 0.6, 1.0, 1.2}
 Freqs = {0.25, 0.5, 1.0, 1.5, 2.0}
 Pans = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1}
 Dance_Index = 1
@@ -95,7 +95,7 @@ function init()
                     for k=1,16 do
                         data[j][n][k] = 5
                     end
-                elseif j == 5 then
+                elseif j == 5 or j == 10 then
                     -- ratchets
                     -- pan
                     for k = 1,16 do
@@ -353,7 +353,7 @@ function callback_waveform(id)
 end
 
 function build_scale()
-    note_nums = MusicUtil.generate_scale_of_length(params:get('root_note'), params:get('scale'), 7)
+    note_nums = MusicUtil.generate_scale_of_length(params:get('root_note'), params:get('scale'), 15)
 end
 
 function update()
@@ -547,10 +547,12 @@ function grid_redraw()
     end
     for x = 1,16 do
         for y = 1,8 do
-            if Presses[x][y] == 1 and Press_Counter[x][y] then
-                Grid:led(x,y,15)
-            else
-                Grid:led(x,y,Dance_Index % 2 == 1 and 15 or 9)
+            if Presses[x][y] == 1 then 
+                if Press_Counter[x][y] then
+                    Grid:led(x,y,15)
+                else
+                    Grid:led(x,y,Dance_Index % 2 == 1 and 15 or 9)
+                end
             end
         end
     end
@@ -566,14 +568,17 @@ function division_view()
     for x = 1, 16 do
         Grid:led(x, 2, 9)
     end
-    local pattern = Tracks[Active_Track].values[PAGES + 1]
-    if Page <= PAGES then
-        Grid:led(Tracks[Active_Track].divisions[Page][pattern], 2, 15)
-    else
-        Grid:led(Tracks[Active_Track].divisions[Page], 2, 15)
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
     end
-    if Page < 6 then
-        Grid:led(Tracks[Active_Track].swings[Page][pattern], 4, 15)
+    if Page ~= -1 then
+        Grid:led(Tracks[Active_Track].divisions[page][Pattern], 2, 15)
+    else
+        Grid:led(Tracks[TRACKS + 1].divisions, 2, 15)
+    end
+    if page ~= 5 and Page ~= -1 then
+        Grid:led(Tracks[Active_Track].swings[page][Pattern], 4, 15)
     end
 end
 
@@ -582,20 +587,35 @@ function probability_view()
         Mod = 0
         Grid_Dirty = true
         return
-    else
-        local pattern = Tracks[Active_Track].values[PAGES + 1]
-        local track = Tracks[Active_Track]
+    end
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
+    end
+    local track = Tracks[Active_Track]
+    if Page ~= -1 then
         for x = 1,16 do
-            local value = Page <= PAGES and track.probabilities[Page][pattern][x] or track.probabilities[Page][x]
-            local left = Page <= PAGES and track.bounds[Page][pattern][1] or track.bounds[Page][1]
-            local right = Page <= PAGES and track.bounds[Page][pattern][2] or track.bounds[Page][2]
+            local value = track.probabilities[page][Pattern][x]
+            local left = track.bounds[page][Pattern][1]
+            local right = track.bounds[page][Pattern][2]
             local check = x >= left and x <= right
             for i = 4, value, -1 do
                 Grid:led(x, 7 - i, check and 9 or 4)
             end
-            if Page <= PAGES and track.indices[Page][pattern] == x then
+            if track.indices[page][Pattern] == x then
                 Grid:led(x, 7 - value, 15)
-            elseif Page == -1 and track.indices[Page] == x then
+            end
+        end
+    else
+        for x = 1,16 do
+            local value = Tracks[TRACKS + 1].probabilities[x]
+            local left = Tracks[TRACKS + 1].bounds[1]
+            local right = Tracks[TRACKS + 1].bounds[2]
+            local check = x >= left and x <= right
+            for i = 4, value, -1 do
+                Grid:led(x, 7 - i, check and 9 or 4)
+            end
+            if Tracks[TRACKS + 1].indices == x then
                 Grid:led(x, 7 - value, 15)
             end
         end
@@ -614,7 +634,7 @@ function page_view()
             -- velocities page
             regular_view(function(x, datum, check)
                 if datum < 5 then
-                    for i = 5, datum + 1, -1 do
+                    for i = datum + 1, 5 do
                         Grid:led(x, 8 - i, check and 9 or 4)
                     end
                 end
@@ -642,7 +662,17 @@ function page_view()
     elseif Page == 4 then
         if Alt_Page then
             -- filter page
-            regular_view()
+            regular_view(function(x, datum, check)
+                if datum > 3 then
+                    for i = 3, datum - 1 do
+                        Grid:led(x, 8 - i, check and 9 or 4)
+                    end
+                elseif datum < 2 then
+                    for i = 2, datum + 1, -1 do
+                        Grid:led(x, 8 - i, check and 9 or 4)
+                    end
+                end
+            end)
         else
             -- octave page
             regular_view(function(x, datum, check)
@@ -678,7 +708,7 @@ function page_view()
 end
 
 function tracks_view()
-    Grid:(16, 1, 4)
+    Grid:led(16, 1, 4)
     for y = 1, 7 do
         Grid:led(3, y, 4)
         Grid:led(2, y, Tracks[y].muted and 4 or 9)
@@ -780,9 +810,12 @@ end
 
 function regular_view(hook)
     local track = Tracks[Active_Track]
-    local page  = Page + Alt_Page and PAGES or 0
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
+    end
     local left  = track.bounds[page][Pattern][1]
-    local right = track.bounds[page][Pattern][1]
+    local right = track.bounds[page][Pattern][2]
 
     if SubSequins > 0 then
         if type(track.data[page][Pattern][SubSequins]) == 'number' then
@@ -798,13 +831,13 @@ function regular_view(hook)
         end
     else
         for x = 1, 16 do
-            local datum = track.data[Page][Pattern][x]
+            local datum = track.data[page][Pattern][x]
             datum = type(datum) == 'number' and datum or datum[Dance_Index % #datum + 1]
             local check = x >= left and x <= right
             if hook then
-                hook(x, datum[x], check)
+                hook(x, datum, check)
             end
-            if track.indices[Page][Pattern] == x then
+            if track.indices[page][Pattern] == x then
                 Grid:led(x, 8 - datum, 15)
             else
                 Grid:led(x, 8 - datum, check and 9 or 4)
@@ -899,6 +932,9 @@ function grid_key(x, y, z)
                 if Page == x - 5 then
                     -- toggle alt page
                     Alt_Page = not Alt_Page
+                else
+                    -- turn off alt page
+                    Alt_Page = false
                 end
                 Page = x - 5
                 SubSequins = 0
@@ -910,10 +946,19 @@ function grid_key(x, y, z)
             if z == 0 then
                 if Mod == x - (5 + PAGES + 1) then
                     Mod = 0
-                elseif Page > 0 then
+                elseif Page ~= 0 then
                     Mod = x - (5 + PAGES + 1)
                     SubSequins = 0
                 end
+            end
+            Presses[x][y] = z
+            Grid_Dirty = true
+        elseif x == 16 then
+            -- pattern page pressed
+            if z == 0 then
+                Mod = 0
+                SubSequins = 0
+                Page = -1
             end
             Presses[x][y] = z
             Grid_Dirty = true
@@ -1077,7 +1122,7 @@ function patterns_key(x, y, z)
                         end
                         flag = false
                     elseif x == 1 then
-                        for x = 2,16 do
+                        for i = 2,16 do
                             -- remove SubSequins, exit SubSequins mode
                             if Presses[i][y] == 1 then
                                 Tracks[TRACKS + 1].data[SubSequins] = Tracks[TRACKS + 1].data[SubSequins][1]
@@ -1125,6 +1170,13 @@ function patterns_key(x, y, z)
                     Tracks[TRACKS + 1].selected = x
                 elseif z == 1 then
                     Press_Counter[x][y] = clock.run(grid_long_press, x, y)
+                end
+                Presses[x][y] = z
+                Grid_Dirty = true
+            elseif y == 6 then
+                if z == 0 then
+                    -- set length
+                    Tracks[TRACKS + 1].lengths[Tracks[TRACKS + 1].selected] = x
                 end
                 Presses[x][y] = z
                 Grid_Dirty = true
@@ -1224,7 +1276,10 @@ end
 
 function division_key(x, y, z)
     local track = Tracks[Active_Track]
-    local page = Page + Alt_Page and PAGES or 0
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
+    end
     if y == 2 then
         if z == 0 then
             if Page == -1 then
@@ -1255,7 +1310,10 @@ end
 
 function probability_key(x, y, z)
     local track = Tracks[Active_Track]
-    local page = Page + Alt_Page and PAGES or 0
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
+    end
     if y >= 3 then
         if z == 0 then
             -- set probability
@@ -1272,7 +1330,10 @@ end
 
 function regular_key(x, y, z, default, min)
     local track = Tracks[Active_Track]
-    local page = Page + Alt_Page and PAGES or 0
+    local page = Page
+    if Alt_Page then
+        page = page + PAGES
+    end
     if Mod == 1 then
         -- Loop mod
         if z == 0 then
@@ -1570,18 +1631,18 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
                         if i == 7 then
                             -- slices
                             for j = (t.id - 1) * 7, (t.id  - 1) * 7 + 6 do
-                                Timber.set_marker(j, "start_frame_", t.values[i], true)
-                                Timber.set_marker(j, "end_frame_", t.values[i], true)
+                                Timber.set_marker(j, "start_frame_", t.values[i][Pattern], true)
+                                Timber.set_marker(j, "end_frame_", t.values[i][Pattern], true)
                             end
                         elseif i == 9 then
                             -- filter
                             for j = (t.id - 1) * 7, (t.id - 1) * 7 + 6 do
-                                engine.filterFreq(j, Freqs[t.values[i]] * params:get("filter_freq_" .. j))
+                                engine.filterFreq(j, Freqs[t.values[i][Pattern]] * params:get("filter_freq_" .. j))
                             end
                         elseif i == 10 then
                             -- pan
                             for j = (t.id - 1) * 7, (t.id - 1) * 7 + 6 do
-                                engine.pan(j, Pans[t.values[i]] + params:get("pan_" .. j))
+                                engine.pan(j, Pans[t.values[i][Pattern]] + params:get("pan_" .. j))
                             end
                         end
                         if Page == 0 and i == 1 then
@@ -1647,12 +1708,12 @@ function Track.pattern_new(data, host_lattice, division, probabilities, lengths)
 end
 
 function Track:update(i)
-    if i ~= 6 then
+    if i ~= 5 then
         self.patterns[i]:set_division(self.divisions[i][Pattern] / 16)
         self.patterns[i]:set_swing(self.swings[i][Pattern] * 100 / 16)
     end
-    if i == 6 or i == 1 then
-        self.patterns[6]:set_division(self.divisions[1][Pattern] / (12 * 16))
+    if i == 5 or i == 1 then
+        self.patterns[5]:set_division(self.divisions[1][Pattern] / (12 * 16))
     end
 end
 
@@ -1719,8 +1780,11 @@ function Track:increment(i, n, reset)
         local r = math.random()
         if r <= self.probabilities[self.indices] / 4 or reset then
             self.values = self.sequins()
-            for j = 1, PAGES do
-                self:update(j)
+            Pattern = self.values
+            for k = 1, TRACKS do
+                for j = 1, 2*PAGES do
+                    Tracks[k]:update(j)
+                end
             end
         end
     else
@@ -1739,10 +1803,10 @@ function Track:increment(i, n, reset)
 end
 
 function Track:play_note()
-    local note = note_nums[self.values[3][Pattern]] + 12 * (self.values[4][Pattern] - 3)
+    local note = note_nums[self.values[3][Pattern] + self.values[8][Pattern] - 1] + 12 * (self.values[4][Pattern] - 3)
     local id = (self.id - 1) * 7 + self.values[2][Pattern] - 1
     if Timber.samples_meta[id].num_frames > 0 then
-        engine.noteOn(self.id, MusicUtil.note_num_to_freq(note), Velocities[self.values[5][Pattern]], id)
+        engine.noteOn(self.id, MusicUtil.note_num_to_freq(note), Velocities[self.values[6][Pattern]], id)
     end
 end
 
@@ -1793,7 +1857,7 @@ function import_tracks(data)
         Tracks[i].lengths       = datum.lengths
         Tracks[i].bounds        = datum.bounds
         Tracks[i].data          = datum.data
-        for j = 1, PAGES do
+        for j = 1, 2*PAGES do
             Tracks[i]:update(j)
         end
         for j = 1, PAGES do
@@ -1810,9 +1874,4 @@ function import_tracks(data)
     Tracks[TRACKS + 1].bounds           = datum.bounds
     Tracks[TRACKS + 1].data             = datum.data
     Tracks[TRACKS + 1].selected         = datum.selected
-end
-
-function cleanup()
-    Arc.arc:cleanup()
-    metro.free_all()
 end

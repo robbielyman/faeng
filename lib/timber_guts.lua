@@ -135,14 +135,14 @@ function Timber.set_marker(id, param_prefix, i, update)
     params:set("start_frame_" .. i .. "_" .. id, start_frame, true)
     params:set("end_frame_" .. i .. "_" .. id, end_frame + 1, true)
     params:set("end_frame_" .. i .. "_" .. id, end_frame, true)
-    if param_prefix == "start_frame_" or start_frame ~= params:get("start_frame_" .. id) then
+    if param_prefix == "start_frame_" or start_frame ~= params:get("start_frame_" .. i .. "_" .. id) then
         if update then
-            engine.startFrame(id, params:get("start_frame_" .. id))
+            engine.startFrame(id, params:get("start_frame_" .. i .. "_" .. id))
         end
     end
-    if param_prefix == "end_frame_" or end_frame ~= params:get("end_frame_" .. id) then
+    if param_prefix == "end_frame_" or end_frame ~= params:get("end_frame_" .. i .. "_" .. id) then
         if update then
-            engine.endFrame(id, params:get("end_frame_" .. id))
+            engine.endFrame(id, params:get("end_frame_" .. i .. "_" .. id))
         end
     end
     waveform_last_edited = {id = id, param = param_prefix .. i .. "_" .. id}
@@ -734,6 +734,7 @@ function Timber.add_sample_params(id)
         formatter = Formatters.bipolar_as_pan_widget,
         action = function(value)
             Timber.views_changed_callback(id)
+            Timber.watch_param_callback(id, "pan_", value)
         end
     }
     params:add{
@@ -774,6 +775,7 @@ function Timber.add_sample_params(id)
         action = function(value)
             engine.amp(id, value)
             Timber.views_changed_callback(id)
+            Timber.watch_param_callback(id, "amp_", value)
         end
     }
     params:add{
@@ -861,7 +863,7 @@ function Timber.add_sample_params(id)
             engine.modAttack(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
-            Timber.watch_param_callback(id)
+            Timber.watch_param_callback(id, "mod_env_attack_", value)
         end
     }
     params:add{
@@ -874,7 +876,7 @@ function Timber.add_sample_params(id)
             engine.modDecay(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
-            Timber.watch_param_callback(id)
+            Timber.watch_param_callback(id, "mod_env_decay_", value)
         end
     }
     params:add{
@@ -886,7 +888,7 @@ function Timber.add_sample_params(id)
             engine.modSustain(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
-            Timber.watch_param_callback(id)
+            Timber.watch_param_callback(id, "mod_env_sustain_", value)
         end
     }
     params:add{
@@ -899,7 +901,7 @@ function Timber.add_sample_params(id)
             engine.modRelease(id, value)
             Timber.views_changed_callback(id)
             Timber.env_dirty = true
-            Timber.watch_param_callback(id)
+            Timber.watch_param_callback(id, "mod_env_release_", value)
         end
     }
 
@@ -1277,7 +1279,7 @@ function Timber.UI.Waveform:enc(n, delta)
             params:delta("start_frame_" .. self.tab_id .. "_" .. self.sample_id, delta)
         end
     elseif n == 3 then
-        params:delta("end_frame_" .. self.sample_id, delta)
+        params:delta("end_frame_" .. self.tab_id .. "_" .. self.sample_id, delta)
     end
     Timber.views_changed_callback(self.sample_id)
 end
