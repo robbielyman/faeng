@@ -162,7 +162,7 @@ function init()
                 Tracks[TRACKS + 1]:increment(-1, nil, true)
                 Tracks[TRACKS + 1].patterns:stop()
                 for i = 1,TRACKS do
-                    for j = 1,PAGES do
+                    for j = 1,2*PAGES do
                         Tracks[i].patterns[j]:stop()
                         Tracks[i]:increment(j, Pattern, true)
                     end
@@ -171,7 +171,7 @@ function init()
             elseif dance_counter % 2 == 1 and Reset_Flag < 0 then
                 Tracks[TRACKS + 1].patterns:start()
                 for i = 1,TRACKS do
-                    for j = 1,PAGES do
+                    for j = 1,2*PAGES do
                         Tracks[i].patterns[j]:start()
                     end
                 end
@@ -1835,7 +1835,7 @@ function export_tracks()
         data[i].data        = track.data
     end
     data[TRACKS + 1] = {}
-    local track = Track[TRACKS + 1]
+    local track = Tracks[TRACKS + 1]
     data[TRACKS + 1].probabilities  = track.probabilities
     data[TRACKS + 1].divisions      = track.divisions
     data[TRACKS + 1].swings         = track.swings
