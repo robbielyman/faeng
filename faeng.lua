@@ -1833,6 +1833,12 @@ function export_tracks()
         data[i].lengths     = track.lengths
         data[i].bounds      = track.bounds
         data[i].data        = track.data
+        data[i].patterns    = {}
+        for j = 1, 4 do
+            data[i].patterns[j].event   = track.pattern_times[j].event
+            data[i].patterns[j].time    = track.pattern_times[j].time
+            data[i].patterns[j].count   = track.pattern_times[j].count
+        end
     end
     data[TRACKS + 1] = {}
     local track = Tracks[TRACKS + 1]
@@ -1857,13 +1863,19 @@ function import_tracks(data)
         Tracks[i].lengths       = datum.lengths
         Tracks[i].bounds        = datum.bounds
         Tracks[i].data          = datum.data
-        for j = 1, 2*PAGES do
-            Tracks[i]:update(j)
+        for j = 1, 4 do
+            Tracks[i].pattern_times[j]:rec_stop()
+            Tracks[i].pattern_times[j]:stop()
+            Tracks[i].pattern_times[j]:clear()
+            Tracks[i].pattern_times[j].event    = datum.patterns[j].event
+            Tracks[i].pattern_times[j].time     = datum.patterns[j].time
+            Tracks[i].pattern_times[j].count    = datum.patterns[j].count
         end
-        for j = 1, PAGES do
+        for j = 1, 2*PAGES do
             for k = 1, 16 do
                 Tracks[i]:make_sequins(j, k)
             end
+            Tracks[i]:update(j)
         end
     end
     local datum = data[TRACKS + 1]
