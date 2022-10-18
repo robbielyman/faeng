@@ -63,7 +63,6 @@ function init()
         local patterns = {}
         for j = 1, 4 do
             patterns[j] = Pattern_Time.new()
-            patterns[j]:set_overdub(1)
             patterns[j].process = function(event)
                 params:set(event.prefix .. event.id, event.val)
             end
@@ -1053,18 +1052,25 @@ function tracks_key(x, y, z)
         if z == 0 and Press_Counter[x][y] then
             local i = x - 3
             clock.cancel(Press_Counter[x][y])
-            if Tracks[y].pattern_times[i].play == 0 and Tracks[y].pattern_times[i].rec == 0 then
+            if Tracks[y].pattern_states[i] == 0 then
                 -- first record
                 if Tracks[y].pattern_times[i].count ~= 0 then
                     Tracks[y].pattern_times[i]:play()
+                    Tracks[y].pattern_times[i]:set_overdub(1)
+                else
+                    Tracks[y].pattern_times[i]:rec_start()
                 end
-                Tracks[y].pattern_times[i]:rec_start()
-            elseif Tracks[y].pattern_times[i].rec == 1 then
+                Tracks[y].pattern_states[i] = 1
+            elseif Tracks[y].pattern_states == 1 then
                 -- then play
                 Tracks[y].pattern_times[i]:rec_stop()
-            elseif Tracks[y].pattern_times[i].play == 1 then
+                Tracks[y].pattern_times[i]:set_overdub(0)
+                Tracks[y].pattern_times[i]:play()
+                Tracks[y].pattern_states[i] = 2
+            elseif Tracks[y].pattern_states[i] == 2 then
                 -- then stop
                 Tracks[y].pattern_times[i]:stop()
+                Tracks[y].pattern_states[i] = 0
             end
         elseif z == 1 then
             Press_Counter[x][y] = clock.run(grid_long_press, x, y)
@@ -1572,6 +1578,7 @@ function grid_long_press(x, y)
         if x >= 4 and x <= 7 then
             local i = x - 3
             Tracks[y].pattern_times[i]:clear()
+            Tracks[y].pattern_states[i] = 0
         end
     else
         SubSequins = x
@@ -1594,6 +1601,10 @@ function Track.new(id, data, host_lattice, divisions, probabilities, lengths, mu
     t.lengths = lengths
     t.bounds = {}
     t.pattern_times = patterns
+    t.pattern_states = {}
+    for i = 1, 4 do
+        t.pattern_states[i] = 0
+    end
     t.patterns = {}
     t.indices = {}
     t.values = {}
