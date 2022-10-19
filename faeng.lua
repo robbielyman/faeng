@@ -1077,6 +1077,12 @@ function tracks_key(x, y, z)
         end
         Presses[x][y] = z
         Grid_Dirty = true
+    elseif x == 16 and y == 1 then
+        if z == 0 then
+            Reset_Flag = 1
+        end
+        Presses[x][y] = z
+        Grid_Dirty = true
     end
 end
 
