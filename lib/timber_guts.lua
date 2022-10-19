@@ -1577,7 +1577,7 @@ function Timber.UI.Env:set_sample_id(id)
     Timber.views_changed_callback(id)
 end
 
-function Timber.UI.Env:set_vab(id)
+function Timber.UI.Env:set_tab(id)
     self.tab_id = util.clamp(id, 1, 2)
 end
 

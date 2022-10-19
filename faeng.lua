@@ -718,9 +718,9 @@ function tracks_view()
         end
         for x = 4, 7 do
             local i = x - 3
-            if Tracks[y].pattern_times[i].play == 1 then
+            if Tracks[y].pattern_states[i] == 2 then
                 Grid:led(x, y, Dance_Index % 2 == 1 and 15 or 9)
-            elseif Tracks[y].pattern_times[i].rec == 1 then
+            elseif Tracks[y].pattern_states[i] == 1 then
                 Grid:led(x, y, 15)
             else
                 Grid:led(x, y, 2)
@@ -1055,17 +1055,17 @@ function tracks_key(x, y, z)
             if Tracks[y].pattern_states[i] == 0 then
                 -- first record
                 if Tracks[y].pattern_times[i].count ~= 0 then
-                    Tracks[y].pattern_times[i]:play()
+                    Tracks[y].pattern_times[i]:start()
                     Tracks[y].pattern_times[i]:set_overdub(1)
                 else
                     Tracks[y].pattern_times[i]:rec_start()
                 end
                 Tracks[y].pattern_states[i] = 1
-            elseif Tracks[y].pattern_states == 1 then
+            elseif Tracks[y].pattern_states[i] == 1 then
                 -- then play
                 Tracks[y].pattern_times[i]:rec_stop()
                 Tracks[y].pattern_times[i]:set_overdub(0)
-                Tracks[y].pattern_times[i]:play()
+                Tracks[y].pattern_times[i]:start()
                 Tracks[y].pattern_states[i] = 2
             elseif Tracks[y].pattern_states[i] == 2 then
                 -- then stop
