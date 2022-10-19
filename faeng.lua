@@ -1852,6 +1852,7 @@ function export_tracks()
         data[i].data        = track.data
         data[i].patterns    = {}
         for j = 1, 4 do
+            data.patterns[j] = {}
             data[i].patterns[j].event   = track.pattern_times[j].event
             data[i].patterns[j].time    = track.pattern_times[j].time
             data[i].patterns[j].count   = track.pattern_times[j].count
