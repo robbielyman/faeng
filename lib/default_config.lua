@@ -1,9 +1,51 @@
+local MusicUtil = require "musicutil"
+local function indicator(datum, check, current, _)
+  if current then
+    return {{8 - datum, 15}}
+  else
+    return {{8 - datum, check and 9 or 4}}
+  end
+end
+local DEFAULTS = {
+  -- draws an indicator at current value
+  indicator = indicator,
+  -- draws a bar that extends above or below a center value
+  bar = function(center)
+    return function(datum, check, current, _)
+      local lights = indicator(datum, check, current, _)
+      if datum > center then
+        for i = center, datum - 1 do
+          table.insert(lights, {8 - i, check and 9 or 4})
+        end
+      elseif datum < center then
+        for i = center - 1, datum + 1, -1 do
+          table.insert(lights, {8 - i, check and 9 or 4})
+        end
+      end
+      return lights
+    end
+  end,
+  -- registers a press 
+  -- and returns a new data value
+  handle_column = function(y, _) return 8 - y end,
+  -- registers a press
+  -- and flips state between 0 and 1
+  handle_column_trig = function(_, current) return current == 1 and 0 or 1 end,
+  -- default action for a track.
+  -- arguments are track, name, datum and counter
+  -- for counter usage, see ratchet
+  action = function(track, name, datum, _) track:set(name, datum) end,
+  -- default mappings for values
+  velocities = {0.1, 0.2, 0.3, 0.6, 1.0, 1.2},
+  freqs = {0.25, 0.5, 1.0, 1.5, 2.0},
+  pans = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1}
+}
 local config = {
   -- advanced: try replacing this!
   engine = {
     name = "Timber",
-    lua_file = norns.state.lib .. "timber_guts",
-    ui_file = norns.state.lib .. "timber_ui"
+    lua_file = "lib/timber_guts",
+    ui_file = "lib/default_ui"
   },
   -- should be a list of ten strings
   page = {
@@ -25,96 +67,50 @@ local config = {
     length = 6,
     division = 1,
     probability = 4,
-    data = 1
+    data = 1,
+    swing = 8,
+    priority = 3,
   },
   play_note = function(track)
+    Playing[track.id] = 0
     if track.muted then return end
     if track:get('trigger') == 0 then return end
     local note = track:get('note') + track:get('alt_note')
     note = Scale(note) + 12 * (track:get('octave') - 3)
-    local sample_id = (track.id - 1) * 7 + track.get('sample') - 1
-    local velocity = DEFAULTS.velocities[track.get('velocity')]
+    local sample_id = (track.id - 1) * 7 + track:get('sample') - 1
+    local velocity = DEFAULTS.velocities[track:get('velocity')]
     -- obviously this needs changing if you change engines
-    if Timber.samples_meta[sample_id].num_frames > 0 then
+    if Engine.samples_meta[sample_id].num_frames > 0 then
       engine.noteOn(track.id, MusicUtil.note_num_to_freq(note), velocity, sample_id)
+      Playing[track.id] = 1
     end
   end,
-  -- arc settings
-  arc = {
-    -- disable to use arcwise, for instance
-    enabled = true,
-    slew = {
-      -- set to true to enable
-      enabled = false,
-      -- in seconds
-      time = 1
-    },
-    -- should be a list of strings
-    -- each string should be one of the engine's params
-    -- without the final integer that indicates the sample number
-    params = {
-      -- okay this one and end_frame_ involve cheating on my part, sorry
-      "start_frame_",
-      "end_frame_",
-      "filter_freq_",
-      "pan_",
-      "amp_",
-      "amp_env_attack_",
-      "amp_env_decay_",
-      "amp_env_sustain_",
-      "amp_env_release_",
-      "mod_env_attack_",
-      "mod_env_decay_",
-      "mod_env_sustain_",
-      "mod_env_release_",
-    },
-    -- should be a list of eight strings
-    -- drawn from the above
-    defaults = {
-      "start_frame_",
-      "end_frame_",
-      "amp_",
-      "filter_freq_",
-      "mod_env_attack_",
-      "mod_env_decay_",
-      "mod_env_sustain_",
-      "mod_env_release_"
-    },
-  },
-  -- pattern recorder settings
-  narcissus = {
-    -- by default listens to everything in arc.params 
-    -- as well as any listed here
-    params = {},
-    -- params listed here will be ignored
-    ignore = {},
-    -- quantization; also affects arc slew quantum if enabled
-    sync_time = 1/48,
-    -- receives a table of the form
-    -- {
-    --  id = sample id string
-    --  prefix = param id as listed in, arc.params
-    --  val = param value
-    -- }
-    -- and returns a table of the same kind (or nil)
-    -- called before the pattern recorder processes the event
-    preprocess = function(event) return event end
-  },
-  setup_hook = function() end,
+  -- use to manage the engine's lua and ui files
+  -- which are included as Engine and Engine_UI.
+  setup = function()
+    Engine.add_params()
+    for i = 0, TRACKS * 7 - 1 do
+      Engine.add_sample_params(i)
+    end
+    Engine_UI.init()
+  end,
   -- defines the triggers page
   trigger = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 0,
     main = {
-      -- should return a list of arrays
+      -- should return a list of pairs
       -- of the form {y,b},
       -- where y is the row to be lit and b is the brightness
       -- datum is the step in question's value
       -- check is true when the x coordinate is within the loop range
       -- current is true when the x coordinate is the current step
-      display = function(datum, check, current)
+      -- the final argument is counter; see ratchet for example of use
+      display = function(datum, check, current, _)
         if current then
           return {{2, 15}}
         elseif datum == 1 then
@@ -151,6 +147,8 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 1,
     main = {
       -- min = 1,
@@ -166,6 +164,8 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 1,
     main = {
       -- min = 1,
@@ -180,6 +180,8 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 3,
     main = {
       min = 3,
@@ -195,21 +197,21 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    priority = 5,
     data = 4,
-    -- subsequins_overlay = false
     -- a bit of trickery to allow ratchets to count faster than their division
     counter = 12,
     main = {
       min = 3,
       -- max = 7,
-      display = function(datum, check, current)
+      display = function(datum, check, current, counter)
         local ratchet_amount = datum & 3
         local ratchets = datum >> 2
         local lights = {}
         local j
         if current then
-          -- breaking the API slightly...
-          local out_of_twelve = (Tracks[Active_Track].counter - 1) % 12 + 1
+          local out_of_twelve = (counter - 1) % 12 + 1
           j = out_of_twelve // (12 / (ratchet_amount + 1))
         end
         for i = 0, ratchet_amount do
@@ -245,13 +247,14 @@ local config = {
       end,
     },
     -- subsequins = {},
-    action = function(track, name, datum)
-      track.set(name, datum)
+    action = function(track, name, datum, counter)
+      track:set(name, datum)
       local ratchet_div = 12 / ((datum & 3) + 1)
       local ratchets = datum >> 2
-      local out_of_twelve = (track.counter - 1) % 12 + 1
-      if track.counter % ratchet_div == 1 then
+      local out_of_twelve = (counter - 1) % 12 + 1
+      if counter % ratchet_div == 1 then
         local step = 2 ^ ((out_of_twelve - 1) / ratchet_div)
+        -- Play_Note is an alias for config.play_note
         if step & ratchets == step then Play_Note(track) end
       end
     end,
@@ -261,8 +264,9 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 5,
-    -- subsequins_overlay = false
     main = {
       min = 2,
       -- max = 7,
@@ -276,8 +280,9 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 1,
-    -- subsequins_overlay = false
     main = {
       -- min = 1,
       -- max = 7
@@ -285,11 +290,11 @@ local config = {
       key = DEFAULTS.handle_column,
     },
     -- subsequins = {},
-    action = function(track, name, datum)
-      DEFAULTS.action(track, name, datum)
+    action = function(track, name, datum, _)
+      DEFAULTS.action(track, name, datum, _)
       for j = (track.id - 1) * 7, (track.id - 1) * 7 + 6 do
-        Timber.set_marker(j, "start_frame_", datum, true)
-        Timber.set_marker(j, "end_frame_", datum, true)
+        Engine.set_marker(j, "start_frame_", datum, true)
+        Engine.set_marker(j, "end_frame_", datum, true)
       end
     end,
   },
@@ -297,8 +302,9 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 1,
-    -- subsequins_overlay = false
     main = {
       -- min = 1,
       -- max = 7,
@@ -312,8 +318,9 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 3,
-    -- subsequins_overlay = false
     main = {
       min = 3,
       -- max = 7,
@@ -321,8 +328,8 @@ local config = {
       key = DEFAULTS.handle_column,
     },
     -- subsequins = {},
-    action = function(track, name, datum)
-      DFEAULTS.action(track, name, datum)
+    action = function(track, name, datum, _)
+      DEFAULTS.action(track, name, datum, _)
       for j = (track.id - 1) * 7, (track.id - 1) * 7 + 6 do
         engine.filterFreq(j, DEFAULTS.freqs[datum] * params:get("filter_freq_" .. j))
       end
@@ -332,8 +339,9 @@ local config = {
     -- length = 6,
     -- division = 1,
     -- probability = 4,
+    -- swing = 8,
+    -- priority = 3
     data = 4,
-    -- subsequins_overlay = false
     main = {
       -- min = 1,
       -- max = 7,
@@ -341,49 +349,12 @@ local config = {
       key = DEFAULTS.handle_column,
     },
     -- subsequins = {}
-    action = function(track, name, datum)
-      DEFAULTS.action(track, name, datum)
+    action = function(track, name, datum, _)
+      DEFAULTS.action(track, name, datum, _)
       for j = (track.id - 1) * 7, (track.id - 1) * 7 + 6 do
         engine.pan(j, DEFAULTS.pans[datum] + params:get("pan_" .. j))
       end
     end
   },
-  DEFAULTS = {
-    -- draws an indicator at current value
-    indicator = function(datum, check, current)
-      if current then
-        return {{8 - datum, 15}}
-      else
-        return {{8 - datum, check and 9 or 4}}
-      end
-    end,
-    -- draws a bar that extends above or below a center value
-    bar = function(center)
-      return function(datum, check, current)
-        local lights = DEFAULTS.indicator(datum, check, current)
-        if datum > center then
-          for i = center, datum - 1 do
-            table.insert(lights, {8 - i, check and 9 or 4})
-          end
-        elseif datum < center then
-          for i = center - 1, datum + 1, -1 do
-            table.insert(lights, {8 - i, check and 9 or 4})
-          end
-        end
-        return lights
-      end
-    end,
-    -- registers a press 
-    -- and returns a new data value
-    handle_column = function(y, _) return 8 - y end,
-    -- registers a press
-    -- and flips state between 0 and 1
-    handle_column_trig = function(_, current) return current == 1 and 0 or 1 end,
-    action = function(track, name, datum) track:set(name, datum) end,
-    -- default mappings for values
-    velocities = {0.1, 0.2, 0.3, 0.6, 1.0, 1.2},
-    freqs = {0.25, 0.5, 1.0, 1.5, 2.0},
-    pans = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1}
-  }
 }
-return config
+return config, DEFAULTS
