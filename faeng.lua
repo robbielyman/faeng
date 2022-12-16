@@ -9,11 +9,10 @@
 
 local sequins = require "sequins"
 local Lattice = {}
-if tonumber(norns.version.update) <= 221204 then
-  Lattice = include("lib/new_lattice")
-else
-  Lattice = require "lattice"
-end
+
+norns.version.required = 221214
+
+Lattice = require "lattice"
 local MusicUtil = require "musicutil"
 Grid = grid.connect()
 local config = include "lib/init"
@@ -50,9 +49,9 @@ if not Set_Current_Voice then Set_Current_Voice = function() end end
 
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
-  if not cond then
-    norns.scripterror(msg)
-  end
+  if cond then return end
+  norns.script.clear()
+  norns.scripterror(msg)
 end
 
 local function update_pattern(pattern_track)
@@ -63,6 +62,26 @@ local function update_pattern(pattern_track)
     end
   end
 end
+
+local Modules = {}
+
+local function setup_module(name, data)
+  if not data.enabled then return end
+  local found
+  if util.file_exists(norns.state.lib .. name) then
+    found = norns.state.lib .. name .. '.lua'
+  elseif util.file_exists(norns.state.path .. name .. '.lua') then
+    found = norns.state.path .. name .. '.lua'
+  elseif util.file_exists(norns.state.data .. name .. '.lua') then
+    found = norns.state.data .. name '.lua'
+  end
+  norns_assert(found, 'config error: module ' .. name .. ' not found')
+  local module = dofile(found)
+  norns_assert(type(module.init) == "function", 'config error: module ' .. name .. ' must have init()')
+  module.init(data.args)
+  Modules[name] = module
+end
+
 
 function Scale(_) return 0 end
 
@@ -193,6 +212,9 @@ end
 local function loop_mod(x, y, z)
   local track = Tracks[Active_Track]
   local page = Page
+  if page == -1 then
+    track = Tracks[TRACKS + 1]
+  end
   if Alt_Page then page = page + PAGES end
   if z ~= 0 then return z end
   for i = 1, 16 do
@@ -219,6 +241,9 @@ local function handle_subsequins(x, y, z, handler, default)
   if z ~= 0 then return z end
   local track = Tracks[Active_Track]
   local page = Page
+  if page == -1 then
+    track = Tracks[TRACKS + 1]
+  end
   if Alt_Page then page = page + PAGES end
   local datum
   if track.type == 'track' then
@@ -366,6 +391,22 @@ local function probability_key(x, y, z)
   return z
 end
 
+local function module_key(module, x, y, z)
+  if not type(module.grid_key) == "function" then return end
+  return module.grid_key(x, y, z)
+end
+
+local function modules_key(x, y, z)
+  local ret, name
+  for k, module in pairs(Modules) do
+    local press = module_key(module, x, y, z)
+    norns_assert(not ret or not press, 'config error: ' .. name .. ' and ' .. k ' both respond to press: (' .. x .. ',' .. y .. ',' .. z .. ')')
+    name = k
+    ret = ret or press
+  end
+  return ret
+end
+
 local function tracks_key(x, y, z)
   if x == 1 then
     -- select track
@@ -383,6 +424,9 @@ local function tracks_key(x, y, z)
       Tracks[y]:increment(i, Pattern, true)
     end
     return z
+  else
+    -- columns 4 through 16 are for modules!
+    return modules_key(x, y, z)
   end
 end
 
@@ -504,6 +548,50 @@ local function probability_view()
   end
 end
 
+local function light_module(module)
+  if not type(module.display) == "function" then return end
+  return module.display()
+end
+
+local function tbl_islist(table)
+  local count = 0
+  for k, _ in pairs(table) do
+    if type(k) == 'number' then
+      count = count + 1
+    else
+      return false
+    end
+  end
+  return count > 0
+end
+
+local function check_light_in_list(list, light)
+  for _, datum in ipairs(list) do
+    if datum[1] == light[2] and datum[2] == light[2] then
+      return datum.name
+    end
+  end
+  return false
+end
+
+local function validate_lights(module_lights)
+  local ret = {}
+  for name, lights in pairs(module_lights) do
+    norns_assert(type(lights) == "table" and tbl_islist(lights), 'config error: module ' .. name .. '.display() returned non-list')
+    for _, light in ipairs(lights) do
+      norns_assert(type(light[1]) == 'number' and type(light[2]) == 'number' and type(light[3]) == 'number', 'config error: module ' .. name .. '.display() returned bad light data')
+      norns_assert(light[1] > 3 and light[2] < 8, 'config error: module ' .. name .. '.display() attempting to light (' .. light[1] .. ',' .. light[2] .. ')')
+      light.name = name
+      local clobber = check_light_in_list(ret, light)
+      if clobber then
+        norns_assert(false, 'config error: modules ' .. clobber .. ' and ' .. name .. ' attempting to light (' .. light[1] .. ',' .. light[2] .. ')')
+      end
+      ret[#ret + 1] = light
+    end
+  end
+  return ret
+end
+
 local function tracks_view()
   Grid:led(16, 1, 4)
   for y = 1, 7 do
@@ -514,6 +602,14 @@ local function tracks_view()
     else
       Grid:led(1, y, Playing[y] == 1 and 9 or 4)
     end
+  end
+  local module_lights = {}
+  for name, module in pairs(Modules) do
+    module_lights[name] = light_module(module)
+  end
+  module_lights = validate_lights(module_lights)
+  for _, light in ipairs(module_lights) do
+    Grid:led(light[1], light[2], light[3])
   end
 end
 
@@ -657,6 +753,10 @@ function init()
   -- sets up engine and ui
   config.setup()
 
+  for name, data in pairs(config.modules) do
+    setup_module(name, data)
+  end
+
   -- grid presses
   for x = 1, 16 do
     Presses[x] = {}
@@ -747,11 +847,23 @@ local ui_enc = Engine_UI.enc
 local ui_key = Engine_UI.key
 
 function key(n, z)
+  for name, module in pairs(Modules) do
+    if module.key then
+      norns_assert(type(module.key) == "function", 'config error: module ' .. name .. ' defines key; must be callable')
+      module.key(n, z)
+    end
+  end
   Keys[n] = z
   ui_key(n, z)
 end
 
 function enc(n, d)
+  for name, module in pairs(Modules) do
+    if module.enc then
+      norns_assert(type(module.enc) == "function", 'config error: module ' .. name .. ' defines enc; must be callable')
+      module.enc(n, d)
+    end
+  end
   if Keys[1] == 1 then
     Tracks[Active_Track]:set_id_minor(Tracks[Active_Track].id_minor + d)
     Set_Current_Voice()

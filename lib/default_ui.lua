@@ -8,9 +8,10 @@ Screen_Dirty = true
 Screen = {}
 
 local function norns_assert(cond, msg)
-  if not cond then
-    norns.scripterror(msg)
-  end
+  if not msg then msg = "" end
+  if cond then return end
+  norns.script.clear()
+  norns.scripterror(msg)
 end
 
 local function callback_sample() end
@@ -82,6 +83,7 @@ end
 function Engine_UI.enc(n, d)
   if n == 1 then
     Screen:set_index_delta(d, false)
+    Screen_Dirty = true
     return
   end
   Screen[Screen.index]:enc(n, d)

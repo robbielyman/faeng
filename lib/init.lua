@@ -2,7 +2,7 @@ local config, DEFAULTS = include "lib/default_config"
 local args, def = {}, {}
 if util.file_exists(norns.state.data .. "/config.lua") then
   print "### found config file"
-  args, def = include(norns.state.data .. "/config")
+  args, def = dofile(norns.state.data .. "/config.lua")
 end
 
 local function tbl_isempty(table)
@@ -43,19 +43,33 @@ local function tbl_deep_extend(...)
   return ret
 end
 
-config = tbl_deep_extend(config, args)
-DEFAULTS = tbl_deep_extend(DEFAULTS, args.DEFAULTS, def)
-
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
-  if not cond then
-    norns.scripterror(msg)
-  end
+  if cond then return end
+  norns.script.clear()
+  norns.scripterror(msg)
 end
 
 local function N(c, m)
   norns_assert(c, m)
 end
+
+local extargs, extdef = {}, {}
+if args.extends then
+  N(type(args.extends) == "string", 'config error: args.extends must be string')
+  if util.file_exists(norns.state.lib .. args.extends .. '.lua') then
+    extargs, extdef = dofile(norns.state.lib .. args.extends .. '.lua')
+  elseif util.file_exists(norns.state.path .. args.extends .. '.lua') then
+    extargs, extdef = dofile(norns.state.path .. args.extends .. '.lua')
+  elseif util.file_exists(norns.state.data .. args.extends .. '.lua') then
+    extargs, extdef = dofile(norns.state.data .. args.extends .. '.lua')
+  else
+    N(false, 'config error: file ' .. args.extends .. ' not found.')
+  end
+end
+
+config = tbl_deep_extend(config, extargs, args)
+DEFAULTS = tbl_deep_extend(DEFAULTS, extargs.DEFAULTS, extdef, args.DEFAULTS, def)
 
 N(config.engine, "config error: config.engine must not be nil")
 

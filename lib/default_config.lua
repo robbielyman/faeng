@@ -1,4 +1,5 @@
 local MusicUtil = require "musicutil"
+
 local function indicator(datum, check, current, _)
   if current then
     return {{8 - datum, 15}}
@@ -6,6 +7,7 @@ local function indicator(datum, check, current, _)
     return {{8 - datum, check and 9 or 4}}
   end
 end
+
 local DEFAULTS = {
   -- draws an indicator at current value
   indicator = indicator,
@@ -38,14 +40,103 @@ local DEFAULTS = {
   -- default mappings for values
   velocities = {0.1, 0.2, 0.3, 0.6, 1.0, 1.2},
   freqs = {0.25, 0.5, 1.0, 1.5, 2.0},
-  pans = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1}
+  pans = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1},
+  -- should be a list of params
+  -- with the final "_0" stripped
+  -- if the param has subparams, see start_frame
+  arc_params = {
+    {"filter_freq", default = 4},
+    "filter_resonance",
+    "pan",
+    {"amp", default = 3},
+    {"amp_env_attack", default = 5},
+    {"amp_env_decay", default = 6},
+    {"amp_env_sustain", default = 7},
+    {"amp_env_release", default = 8},
+    "mod_env_attack",
+    "mod_env_decay",
+    "mod_env_sustain",
+    "mod_env_release",
+    {
+      "start_frame",
+      -- indicates that there is one param per id_minor
+      -- for a total of 49
+      -- defaults to true
+      id_minor = true,
+      -- indicates further subparams if defined
+      subparams = 6,
+      -- should editing one ring affect all sharing the same track?
+      -- defaults to true
+      macro_edit = false,
+      default = 1,
+    },
+    {
+      "end_frame",
+      id_minor = true,
+      subparams = 6,
+      macro_edit = false,
+      default = 2,
+    },
+  },
 }
+
 local config = {
+  -- allows you to build on another config file
+  -- we'll set it to nil in this default file
+  -- NB: if *that* file defines extends, it will be ignored
+  extends = nil,
   -- advanced: try replacing this!
   engine = {
     name = "Timber",
     lua_file = "lib/timber_guts",
     ui_file = "lib/default_ui"
+  },
+  -- it's possible to define your own modules
+  -- if you're interested in writing a module
+  -- that has access to the screen, let's chat :)
+  -- access to the grid is modeled by the narcissus module
+  modules = {
+    -- each module should be a table with two keys:
+    -- a boolean 'enabled', and an 'args'
+    -- modules should be stored in 'data/faeng'
+    -- (or 'code/faeng/lib' if you want to PR)
+    -- so 'arc_guts' points to a file 'code/faeng/lib/arc_guts.lua'
+    -- that gets included by faeng
+    -- like all modules,
+    -- arc_guts provides a function arc_guts.init
+    -- that gets called with args as its argument.
+    arc_guts = {
+      -- arc integration is enabled by default
+      enabled = true,
+      args = {
+        -- be sure to change these if you change engines!
+        params = DEFAULTS.arc_params,
+        rings = 4,
+        alt_rings = true,
+        slew = {
+          enabled = true,
+          time = 1
+        },
+      },
+    },
+    -- clocked pattern recorder per track
+    narcissus = {
+      -- enabled by default
+      enabled = true,
+      args = {
+        -- defaults to listening to the same params as arc can control
+        params = DEFAULTS.arc_params,
+        quantization = 1/48,
+      },
+    },
+    -- adds more output options
+    outputs = {
+      -- disabled by default
+      enabled = false,
+      args = {
+        outputs = {"audio", "midi", "audio + midi", "crow out 1+2", "crow ii jf", "crow ii er301"}
+      },
+    },
   },
   -- should be a list of ten strings
   page = {
