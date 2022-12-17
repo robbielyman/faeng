@@ -45,14 +45,13 @@ function Get_Current_Voice()
   return 7 * (Active_Track - 1)  + Tracks[Active_Track].id_minor
 end
 
-if not Set_Current_Voice then Set_Current_Voice = function() end end
-
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
+
+norns_assert(type(Set_Current_Voice) == "function", 'config error: Set_Current_Voice undefined')
 
 local function update_pattern(pattern_track)
   Pattern = pattern_track.sequins()
@@ -68,7 +67,7 @@ local Modules = {}
 local function setup_module(name, data)
   if not data.enabled then return end
   local found
-  if util.file_exists(norns.state.lib .. name) then
+  if util.file_exists(norns.state.lib .. name .. '.lua') then
     found = norns.state.lib .. name .. '.lua'
   elseif util.file_exists(norns.state.path .. name .. '.lua') then
     found = norns.state.path .. name .. '.lua'
@@ -166,14 +165,16 @@ local function nav_bar(x, z)
     -- scroll left
     if z == 0 then
       Active_Track = Active_Track - 1 < 1 and TRACKS or Active_Track - 1
-      Set_Current_Voice()
+      Set_Current_Voice(Get_Current_Voice())
+      Engine_UI.screen_callback()
     end
     return z
   elseif x == 4 then
     -- scroll right
     if z == 0 then
       Active_Track = Active_Track + 1 > TRACKS and 1 or Active_Track + 1
-      Set_Current_Voice()
+      Set_Current_Voice(Get_Current_Voice())
+      Engine_UI.screen_callback()
     end
     return z
   elseif x >= 5 + 1 and x <= 5 + PAGES then
@@ -392,15 +393,17 @@ local function probability_key(x, y, z)
 end
 
 local function module_key(module, x, y, z)
+  if not module.grid_key then return end
   if not type(module.grid_key) == "function" then return end
   return module.grid_key(x, y, z)
 end
 
 local function modules_key(x, y, z)
-  local ret, name
+  local ret
+  local name = ""
   for k, module in pairs(Modules) do
     local press = module_key(module, x, y, z)
-    norns_assert(not ret or not press, 'config error: ' .. name .. ' and ' .. k ' both respond to press: (' .. x .. ',' .. y .. ',' .. z .. ')')
+    norns_assert(not ret or not press, 'config error: ' .. name .. ' and ' .. k .. ' both respond to press: (' .. x .. ',' .. y .. ',' .. z .. ')')
     name = k
     ret = ret or press
   end
@@ -412,6 +415,8 @@ local function tracks_key(x, y, z)
     -- select track
     if z ~= 0 then return z end
     Active_Track = y
+    Set_Current_Voice(Get_Current_Voice())
+    Engine_UI.screen_callback()
     return z
   elseif x == 2 then
     -- mute / unmute track
@@ -549,6 +554,7 @@ local function probability_view()
 end
 
 local function light_module(module)
+  if not module.display then return end
   if not type(module.display) == "function" then return end
   return module.display()
 end
@@ -753,9 +759,6 @@ function init()
   -- sets up engine and ui
   config.setup()
 
-  for name, data in pairs(config.modules) do
-    setup_module(name, data)
-  end
 
   -- grid presses
   for x = 1, 16 do
@@ -788,6 +791,10 @@ function init()
     if util.file_exists(norns.state.data .. "/pset_track_data_" .. number .. ".data") then
       util.os_capture("rm " .. norns.state.data .. "/pset_track_data_" .. number .. ".data")
     end
+  end
+
+  for name, data in pairs(config.modules) do
+    setup_module(name, data)
   end
 
   -- Grid!
@@ -866,7 +873,8 @@ function enc(n, d)
   end
   if Keys[1] == 1 then
     Tracks[Active_Track]:set_id_minor(Tracks[Active_Track].id_minor + d)
-    Set_Current_Voice()
+    Set_Current_Voice(Get_Current_Voice())
+    Engine_UI.screen_callback()
     return
   end
   ui_enc(n, d)

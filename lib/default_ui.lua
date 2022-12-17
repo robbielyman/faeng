@@ -10,7 +10,6 @@ Screen = {}
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
@@ -31,15 +30,15 @@ local function update()
   Screen[6]:update()
 end
 
-function Set_Current_Voice()
+function Set_Current_Voice(voice_id)
   for i = 1, 7 do
-    Screen[i]:set_sample_id(Get_Current_Voice())
+    Screen[i]:set_sample_id(voice_id)
   end
 end
 
 function Engine_UI.init()
   Screen = UI.Pages.new(1, 7)
-  norns_assert(Engine and Engine.UI and Engine.UI.SampleSetup, 'config error: Timber_Guts not loaded')
+  norns_assert(Engine and Engine.UI and Engine.UI.SampleSetup, 'config error: timber_guts not loaded')
   -- Set the numerical indices of Screen to the pages for easy metaprogramming
   Screen[1] = Engine.UI.SampleSetup.new(0)
   Screen[2] = Engine.UI.Waveform.new(0)

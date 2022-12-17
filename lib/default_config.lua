@@ -8,7 +8,7 @@ local function indicator(datum, check, current, _)
   end
 end
 
-local DEFAULTS = {
+DEFAULTS = {
   -- draws an indicator at current value
   indicator = indicator,
   -- draws a bar that extends above or below a center value

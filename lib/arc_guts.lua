@@ -11,7 +11,6 @@ local Slew = false
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
@@ -29,7 +28,7 @@ function Arc_Param.new(args, slew_enabled)
   if p.subparams then infix = "_" .. p.subparams end
   local suffix = ""
   if p.id_minor then suffix = "_0" end
-  p.name = params:get_name(p.id_base .. infix .. suffix)
+  p.name = params:lookup_param(p.id_base .. infix .. suffix).name
   setmetatable(p, Arc_Param)
   if not slew_enabled then return p end
   p.data = {}

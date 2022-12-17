@@ -2,6 +2,10 @@
 -- built for faeng
 
 local Engine_UI = {}
+local UI = require "ui"
+local Envgraph = require "envgraph"
+local Graph = require "graph"
+local Voice = 0
 
 local Tab = {}
 Tab.__index = Tab
@@ -70,16 +74,12 @@ function Page:set_preset(id)
   end
 end
 
-local UI = require "ui"
-local Envgraph = require "envgraph"
-local Graph = require "graph"
 Screen_Dirty = true
 Screen = {}
 
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
@@ -87,15 +87,17 @@ function Engine_UI.screen_callback(_)
   Screen_Dirty = true
 end
 
-function Set_Current_Voice()
-  for i = 1, 7 do
-    Screen[i]:set_preset(Get_Current_Voice())
+function Set_Current_Voice(voice_id)
+  for i = 1, 3 do
+    Screen[i]:set_preset(voice_id)
   end
+  Voice = voice_id
+  Screen_Dirty = true
 end
 
 function Engine_UI.init()
   Screen = UI.Pages.new(1, 7)
-  norns_assert(params:lookup_param("oatk1_0"), "config error: xD1 not properly loaded!")
+  norns_assert(params:lookup_param("oatk_1_0"), "config error: xD1 not properly loaded!")
 
   local ophook = function (self)
     self.lists[1].index = self.index
@@ -106,26 +108,23 @@ function Engine_UI.init()
     end
     self.lists[2].num_above_selected = 0
     self.lists[2].text_align = "right"
-    local adsr_params = {}
-    for i = 1, 4 do
-      adsr_params[i] = params:get(self.params[i] .. self.preset)
-    end
-    self.env_graph:edit_adsr(unpack(adsr_params), nil, params:get("ocurve_" .. self.preset))
+    self.env_graph:edit_adsr(params:get(self.params[1] .. self.preset), params:get(self.params[2] .. self.preset), params:get(self.params[3] .. self.preset), params:get(self.params[4] .. self.preset), params:get(self.params[7] .. self.preset) / 4, params:get("ocurve_" .. self.preset))
     self.env_graph:redraw()
   end
   local titles, tabs = {}, {}
   for i = 1, 6 do
     titles[i] = tostring(i)
     tabs[i] = Tab.new({
-      "oatk" .. i .. "_", "odec" .. i .. "_", "osus" .. i .. "_", "orel" .. i .. "_",
-      "num" .. i .. "_", "denom" .. i .. "_", "oamp" .. i .. "_", "ocurve" .. "_"
+      "oatk_" .. i .. "_", "odec_" .. i .. "_", "osus_" .. i .. "_", "orel_" .. i .. "_",
+      "num_" .. i .. "_", "denom_" .. i .. "_", "oamp_" .. i .. "_", "ocurve" .. "_"
     }, {
         UI.ScrollingList.new(70, 24, 1, {
           "atk", "dec", "sus", "rel", "num", "denom", "index", "curve"
         }),
         UI.ScrollingList.new(120, 24)
       }, ophook)
-    local env_graph = Envgraph.new_adsr(0, 20, nil, nil, 0, 0, 1, 0, 1, -1)
+    local adsr_params = { params:get("oatk_1_0"), params:get("odec_1_0"), params:get("osus_1_0"), params:get("orel_1_0")}
+    local env_graph = Envgraph.new_adsr(0, 20, nil, nil, table.unpack(adsr_params), 1, -4)
     env_graph:set_position_and_size(4, 22, 56, 38)
     tabs[i].env_graph = env_graph
   end
@@ -134,7 +133,7 @@ function Engine_UI.init()
     {
       Tab.new({"fatk_", "fdec_", "fsus_", "frel_", "hirat_", "hires_", "lorat_", "lores_", "hfamt_", "lfamt_", "fcurve_"},
         {
-          UI.ScrollingList(70, 24, 1, {"atk", "dec", "sus", "rel", "high", "res", "low", "res", "e>hi", "e>low", "curve"}),
+          UI.ScrollingList.new(70, 24, 1, {"atk", "dec", "sus", "rel", "high", "res", "low", "res", "e>hi", "e>low", "curve"}),
           UI.ScrollingList.new(120, 24)
         },
         function (self)
@@ -146,11 +145,7 @@ function Engine_UI.init()
             self.lists[2].entries[i] = params:string(self.params[i] .. self.preset)
           end
           self.lists[2].text_align = "right"
-          local adsr_params = {}
-          for i = 1, 4 do
-            adsr_params[i] = params:get(self.params[i] .. self.preset)
-          end
-          self.env_graph:edit_adsr(unpack(adsr_params), nil, params:get("fcurve_" .. self.preset))
+          self.env_graph:edit_adsr(params:get(self.params[1] .. self.preset), params:get(self.params[2] .. self.preset), params:get(self.params[3] .. self.preset), params:get(self.params[4] .. self.preset), nil, params:get("fcurve_" .. self.preset))
           self.env_graph:redraw()
         end),
       Tab.new({"lfreq_", "lfade_", "lfo_am_", "lfo_pm_", "lfo_hfm_", "lfo_lfm_"},
@@ -171,7 +166,8 @@ function Engine_UI.init()
           self.lfo_graph:redraw()
         end)
     })
-  Screen[2].tabs[1].env_graph = Envgraph.new_adsr(0, 20, nil, nil, 0, 0, 1, 0, 1, -1)
+  local adsr_params = {params:get("fatk_0"), params:get("fdec_0"), params:get("fsus_0"), params:get("frel_0")}
+  Screen[2].tabs[1].env_graph = Envgraph.new_adsr(0, 20, nil, nil, table.unpack(adsr_params), 1, -4)
   Screen[2].tabs[1].env_graph:set_position_and_size(4, 22, 56, 38)
   Screen[2].tabs[2].lfo_graph = Graph.new(0, 1, "lin", -1, 1, "lin", nil, true, false)
   Screen[2].tabs[2].lfo_graph:set_position_and_size(4, 22, 56, 38)
@@ -222,15 +218,12 @@ function Engine_UI.init()
           end
           self.lists[2].num_above_selected = 0
           self.lists[2].text_align = "right"
-          local adsr_params = {}
-          for i = 1, 4 do
-            adsr_params[i] = params:get(self.params[i] .. self.preset)
-          end
-          self.env_graph:edit_adsr(unpack(adsr_params), nil, params:get("pcurve_" .. self.preset))
+          self.env_graph:edit_adsr(params:get(self.params[1] .. self.preset), params:get(self.params[2] .. self.preset), params:get(self.params[3] .. self.preset), params:get(self.params[4] .. self.preset), nil, params:get("pcurve_" .. self.preset))
           self.env_graph:redraw()
         end)
     })
-  Screen[3].tabs[2].env_graph = Envgraph.new_adsr(0, 20, nil, nil, 0, 0, 1, 0, 1, -1)
+  adsr_params = {params:get("patk_0"), params:get("pdec_0"), params:get("psus_0"), params:get("prel_0")}
+  Screen[3].tabs[2].env_graph = Envgraph.new_adsr(0, 20, nil, nil, table.unpack(adsr_params), 1, -4)
   Screen[3].tabs[2].env_graph:set_position_and_size(4, 22, 56, 38)
 
   local screen_redraw_metro = metro.init()
@@ -246,7 +239,7 @@ end
 
 local function draw_title(preset)
   screen.level(15)
-  screen.move(124, 9)
+  screen.move(4, 15)
   screen.text(string.format("%03d", preset))
   screen.fill()
 end
@@ -255,7 +248,7 @@ function Engine_UI.redraw()
   Screen_Dirty = false
   screen.clear()
   Screen:redraw()
-  draw_title(Get_Current_Voice())
+  draw_title(Voice)
   Screen[Screen.index]:redraw()
   if Popup then
     Popup:redraw()

@@ -1,8 +1,8 @@
 local config, DEFAULTS = include "lib/default_config"
 local args, def = {}, {}
-if util.file_exists(norns.state.data .. "/config.lua") then
+if util.file_exists(norns.state.data .. "config.lua") then
   print "### found config file"
-  args, def = dofile(norns.state.data .. "/config.lua")
+  args, def = dofile(norns.state.data .. "config.lua")
 end
 
 local function tbl_isempty(table)
@@ -46,7 +46,6 @@ end
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
@@ -84,15 +83,32 @@ engine.name = config.engine.name
 if config.engine.lua_file then
   N(type(config.engine.lua_file) == 'string', 'config error: engine.lua_file must be string')
   -- N(util.file_exists(config.engine.lua_file), 'config error: no such engine.lua_file')
-  Engine = include(config.engine.lua_file)
-  N(Engine, 'config error: including ' .. config.engine.lua_file .. ' returned nil')
+  if util.file_exists(norns.state.lib .. config.engine.lua_file .. '.lua') then
+    Engine = dofile(norns.state.lib .. config.engine.lua_file .. '.lua')
+  elseif util.file_exists(_path.code .. config.engine.lua_file .. '.lua') then
+    Engine = dofile(_path.code .. config.engine.lua_file .. '.lua')
+  elseif util.file_exists(norns.state.path .. config.engine.lua_file .. '.lua') then
+    Engine = dofile(norns.state.path .. config.engine.lua_file .. '.lua')
+  elseif util.file_exists(norns.state.data .. config.engine.lua_file .. '.lua') then
+    Engine = dofile(norns.state.data .. config.engine.lua_file .. '.lua')
+  else
+    N(false, 'config error: including ' .. config.engine.lua_file .. ' returned nil')
+  end
 end
 
 if config.engine.ui_file then
   N(type(config.engine.ui_file) == 'string', 'config error: engine.ui_file must be string')
-  -- N(util.file_exists(config.engine.ui_file), 'config error: no such engine.ui_file')
-  Engine_UI = include(config.engine.ui_file)
-  N(Engine_UI, 'config error: including ' .. config.engine.ui_file .. ' returned nil')
+  if util.file_exists(norns.state.path .. config.engine.ui_file .. '.lua') then
+    Engine_UI = dofile(norns.state.path .. config.engine.ui_file .. '.lua')
+  elseif util.file_exists(norns.state.lib .. config.engine.ui_file .. '.lua') then
+    Engine_UI = dofile(norns.state.lib .. config.engine.ui_file .. '.lua')
+  elseif util.file_exists(_path.code .. config.engine.ui_file .. '.lua') then
+    Engine_UI = dofile(_path.code .. config.engine.ui_file .. '.lua')
+  elseif util.file_exists(norns.state.data .. config.engine.ui_file .. '.lua') then
+    Engine_UI = dofile(norns.state.data .. config.engine.ui_file .. '.lua')
+  else
+    N(false, 'config error: including ' .. config.engine.ui_file .. ' returned nil')
+  end
 end
 
 N(config.page, 'config error: config.page must not be nil')
@@ -165,7 +181,7 @@ for i = 1, 10 do
   N(type(config[key].action) == 'function', 'config error: ' .. key .. '.action must be callable')
 end
 
-N(type(config.setup_hook) == 'function', 'config error: config.setup_hook must be callable')
+N(type(config.setup) == 'function', 'config error: config.setup must be callable')
 
 N(type(config.play_note) == 'function', 'config error: config.play_note must be callable')
 

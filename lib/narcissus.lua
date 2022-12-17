@@ -11,7 +11,6 @@ local Narcissus = {}
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
@@ -85,7 +84,7 @@ local function grid_long_press(x, y)
 end
 
 function M.grid_key(x, y, z)
-  if not x == 4 then return end
+  if x ~= 4 then return end
   if z ~=0 then Press_Counter[x][y] = clock.run(grid_long_press, x, y) return z end
   if not Press_Counter[x][y] then return z end
   clock.cancel(Press_Counter[x][y])
@@ -138,6 +137,7 @@ function M.init(args)
     Narcissus[i].process = process
     Narcissus[i]:set_quantization(args.quantization)
   end
+  Narcissus.params = {}
   for _, param in ipairs(args.params) do
     prep_param(param)
   end

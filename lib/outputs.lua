@@ -6,7 +6,6 @@ local defaults = {"audio", "midi", "audio + midi", "crow out 1+2", "crow ii jf",
 local function norns_assert(cond, msg)
   if not msg then msg = "" end
   if cond then return end
-  norns.script.clear()
   norns.scripterror(msg)
 end
 
