@@ -30,7 +30,7 @@ local function tbl_deep_extend(...)
   local ret = {}
   for i = 1, select('#', ...) do
     local tbl = select(i, ...)
-    if tbl then
+    if type(tbl) == "table" then
       for k, v in pairs(tbl) do
         if can_merge(v) and can_merge(ret[k]) then
           ret[k] = tbl_deep_extend(ret[k], v)

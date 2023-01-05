@@ -22,7 +22,8 @@ function Arc_Param.new(args, slew_enabled)
     id_base = args[1],
     subparams = args.subparams,
     id_minor = args.id_minor,
-    visible = args.subparams and 1 or true
+    visible = args.subparams and 1 or true,
+    data = nil
   }
   local infix = ""
   if p.subparams then infix = "_" .. p.subparams end
