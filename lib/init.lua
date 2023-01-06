@@ -113,10 +113,11 @@ end
 
 N(config.page, 'config error: config.page must not be nil')
 N(type(config.page.pages) == 'table' and #config.page.pages == 10, 'config error: page.pages must be list of ten')
-local keys = {'length', 'division', 'probability', 'data', 'swing', 'priority'}
+local keys = {'length', 'probability', 'data', 'swing', 'priority'}
 for _, k in ipairs(keys) do
   N(type(config.page[k]) == 'number', 'config error: page.' .. k .. ' must be number')
 end
+  N(#config.page.division == 2 and type(config.page.division[1]) == "number" and type(config.page.division[2]) == "number", 'config error: page.division must be list of two numbers')
 for i = 1, 10 do
   local key = config.page.pages[i]
   N(config[key], 'config error: no page found matching ' .. key)

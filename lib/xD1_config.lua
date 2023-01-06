@@ -44,7 +44,7 @@ DEFAULTS.params = {
   { "feedback", default = 7 },
   "alg"
 }
-DEFAULTS.schedule_note_off = function (note, preset, sync_time)
+DEFAULTS.schedule_note_off = function (note, preset, sleep_time)
   if not Notes_Off_Counter then
     Notes_Off_Counter = {}
   end
@@ -55,7 +55,7 @@ DEFAULTS.schedule_note_off = function (note, preset, sync_time)
     clock.cancel(Notes_Off_Counter[preset][note])
   end
   Notes_Off_Counter[preset][note] = clock.run(function ()
-    clock.sync(sync_time)
+    clock.sleep(sleep_time * clock.get_beat_sec())
     engine.note_off(note, preset)
   end)
 end

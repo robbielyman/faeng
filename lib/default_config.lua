@@ -156,7 +156,7 @@ local config = {
     -- corresponding settings
     -- in a given page's table
     length = 6,
-    division = 1,
+    division = {1, 16},
     probability = 4,
     data = 1,
     swing = 8,
@@ -188,7 +188,7 @@ local config = {
   -- defines the triggers page
   trigger = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -236,7 +236,7 @@ local config = {
   -- defines the sample page
   sample = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -253,7 +253,7 @@ local config = {
   -- defines the note page
   note = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -269,7 +269,7 @@ local config = {
   },
   octave = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -286,7 +286,7 @@ local config = {
   -- defines the ratchet page
   ratchet = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     priority = 5,
@@ -353,7 +353,7 @@ local config = {
   -- defines the velocity page
   velocity = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -369,7 +369,7 @@ local config = {
   },
   slice = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -391,7 +391,7 @@ local config = {
   },
   alt_note = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -407,7 +407,7 @@ local config = {
   },
   filter = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3
@@ -428,7 +428,7 @@ local config = {
   },
   pan = {
     -- length = 6,
-    -- division = 1,
+    -- division = {1, 16},
     -- probability = 4,
     -- swing = 8,
     -- priority = 3

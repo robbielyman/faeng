@@ -96,7 +96,7 @@ function Set_Current_Voice(voice_id)
 end
 
 function Engine_UI.init()
-  Screen = UI.Pages.new(1, 7)
+  Screen = UI.Pages.new(1, 3)
   norns_assert(params:lookup_param("oatk_1_0"), "config error: xD1 not properly loaded!")
 
   local ophook = function (self)

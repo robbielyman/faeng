@@ -80,6 +80,9 @@ local Lattice = {}
 norns.version.required = 221214
 
 Lattice = require "lattice"
+if tonumber(norns.version.update) < 230105 then
+  Lattice = include "lib/lattice"
+end
 local MusicUtil = require "musicutil"
 Grid = grid.connect()
 local config = include "lib/init"
@@ -417,14 +420,24 @@ local function division_key(x, y, z)
   if y == 2 then
     if z ~= 0 then return z end
     if Page == -1 then
-      Tracks[TRACKS+1].divisions = x
+      Tracks[TRACKS+1].divisions[1] = x
       Tracks[TRACKS+1]:update()
     else
-      track.divisions[page][Pattern] = x
+      track.divisions[page][Pattern][1] = x
       track:update()
     end
     return z
   elseif y == 4 then
+    if z ~= 0 then return z end
+    if Page == -1 then
+      Tracks[TRACKS+1].divisions[2] = x
+      Tracks[TRACKS+1]:update()
+    else
+      track.divisions[page][Pattern][2] = x
+      track:update()
+    end
+    return z
+  elseif y == 6 then
     if z ~= 0 then return z end
     if Page == -1 then
       Tracks[TRACKS+1].swings = x
@@ -562,15 +575,18 @@ local function division_view()
   end
   for x = 1, 16 do
     Grid:led(x, 2, 4)
+    Grid:led(x, 4, 4)
   end
   local page = Page
   if Alt_Page then page = page + PAGES end
   if Page ~= -1 then
-    Grid:led(Tracks[Active_Track].divisions[page][Pattern], 2, 15)
-    Grid:led(Tracks[Active_Track].swings[page][Pattern], 4, 15)
+    Grid:led(Tracks[Active_Track].divisions[page][Pattern][1], 2, 15)
+    Grid:led(Tracks[Active_Track].divisions[page][Pattern][2], 4, 15)
+    Grid:led(Tracks[Active_Track].swings[page][Pattern], 6, 15)
   else
-    Grid:led(Tracks[TRACKS+1].divisions, 2, 15)
-    Grid:led(Tracks[TRACKS+1].swings, 4, 15)
+    Grid:led(Tracks[TRACKS+1].divisions[1], 2, 15)
+    Grid:led(Tracks[TRACKS+1].divisions[2], 4, 15)
+    Grid:led(Tracks[TRACKS+1].swings, 6, 15)
   end
 end
 
@@ -715,11 +731,11 @@ local function patterns_view()
     Grid:led(track.selected, 4, 12)
     Grid:led(track.index, 4, Dance_Index % 2 == 1 and 15 or 0)
 
-    for x = 1, track.lengths[Pattern] do
+    for x = 1, track.lengths[track.index] do
       Grid:led(x, 6, 4)
     end
 
-    Grid:led(track.lengths[Pattern], 6, 9)
+    Grid:led(track.lengths[track.index], 6, 9)
     Grid:led(track.lengths[track.selected], 6, 12)
     Grid:led(track.counters, 6, 15)
   end
@@ -957,7 +973,9 @@ function Track.new(id, lattice)
     for n = 1, PATTERNS do
       t.bounds[i][n] = {1, util.clamp(defaults.length, 1, 16)}
       t.swings[i][n] = util.clamp(defaults.swing, 1, 16)
-      t.divisions[i][n] = util.clamp(defaults.division, 1, 16)
+      t.divisions[i][n] = {}
+      t.divisions[i][n][1] = util.clamp(defaults.division[1], 1, 16)
+      t.divisions[i][n][2] = util.clamp(defaults.division[2], 1, 16)
       t.data[i][n] = {}
       t.probabilities[i][n] = {}
       for j = 1, 16 do
@@ -995,7 +1013,7 @@ function Track.new(id, lattice)
       return z
     end
     t.sprockets[i] = lattice:new_sprocket{
-      division = t.divisions[i][1] / (16 * t.counters_max[i]),
+      division = t.divisions[i][1][1] / (t.divisions[i][1][2] * t.counters_max[i]),
       order = defaults.priority,
       swing = t.swings[i][1] * 100 / 16,
       action = function ()
@@ -1022,11 +1040,14 @@ function Track.pattern_new(lattice)
     id = TRACKS + 1,
     data = {},
     probabilities = {},
-    divisions = util.clamp(defaults.division, 1, 16),
+    divisions = {
+      util.clamp(defaults.division[1], 1, 16),
+      util.clamp(defaults.division[2], 1, 16),
+    },
     bounds = {1, 1},
     index = 1,
     swings = util.clamp(defaults.swing, 1, 16),
-    counters = 0,
+    counters = 1,
     selected = 1,
     lengths = {},
     sequins = nil,
@@ -1036,29 +1057,35 @@ function Track.pattern_new(lattice)
   for n = 1, PATTERNS do
     t.data[n] = 1
     t.probabilities[n] = defaults.probability
+  end
+  for n = 1, 16 do
     t.lengths[n] = defaults.length
   end
   t.sequins = sequins.new(t.data)
   t.sprockets = lattice:new_sprocket{
-    division = t.divisions / 16,
+    division = t.divisions[1] / t.divisions[2],
     order = 1,
     swing = 100 * t.swings / 16,
     action = function ()
-      t.counters = t.counters % t.lengths[Pattern] + 1
-      if t.counters == 1 then
-        t:increment()
-      end
+      t.counters = t.counters + 1
       if Page == -1 then
         Grid_Dirty = true
       end
-      local r = math.random()
-      if r > t.probabilities[Pattern] / 4 then return end
-      Pattern = t.sequins()
-      for i = 1, TRACKS do
-        Tracks[i]:update()
-        for j = 1, 2*PAGES do
-          Tracks[i].reset_flag[j] = true
-          Tracks[i]:make_sequins(j)
+      if t.counters > t.lengths[t.index] then
+        t:increment()
+        t.counters = 1
+      end
+      if t.counters == 1 then
+        local r = math.random()
+        if r > t.probabilities[Pattern] / 4 then return end
+        Pattern = t.sequins()
+        for i = 1, TRACKS do
+          Tracks[i]:update()
+          for j = 1, 2*PAGES do
+            Tracks[i].reset_flag[j] = true
+            lattice:reset_phase(Tracks[i].sprockets[j])
+            Tracks[i]:make_sequins(j)
+          end
         end
       end
     end
@@ -1068,12 +1095,12 @@ end
 
 function Track:update()
   if self.type ~= 'track' then
-    self.sprockets:set_division(self.divisions / 16)
-    self.sprockets:set_swing(self.swings * 100 /16)
+    self.sprockets:set_division(self.divisions[1] / self.divisions[2])
+    self.sprockets:set_swing(self.swings / 16 * 100)
   else
     for i = 1, 2*PAGES do
-      self.sprockets[i]:set_division(self.divisions[i][Pattern] / (self.counters_max[i] * 16))
-      self.sprockets[i]:set_swing(self.swings[i][Pattern] * 100 / 16)
+      self.sprockets[i]:set_division(self.divisions[i][Pattern][1] / (self.counters_max[i] * self.divisions[i][Pattern][2]))
+      self.sprockets[i]:set_swing(self.swings[i][Pattern] / 16 * 100)
     end
   end
 end
@@ -1157,7 +1184,8 @@ end
 
 function Track:copy(source, target)
   for i = 1, 2*PAGES do
-    self.divisions[i][target] = self.divisions[i][source]
+    self.divisions[i][target][1] = self.divisions[i][source][1]
+    self.divisions[i][target][2] = self.divisions[i][source][2]
     for j = 1, 16 do
       self.probabilities[i][target][j] = self.probabilities[i][source][j]
       if type(self.data[i][target][j]) ~= "number" then
