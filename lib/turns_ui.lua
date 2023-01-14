@@ -50,7 +50,7 @@ function Page.new(titles, tabs)
   return p
 end
 
-function P:enc(n, d)
+function Page:enc(n, d)
   local tab = self.tabs[self.ui.index]
   tab:enc(n, d)
 end
@@ -82,7 +82,7 @@ function Engine_UI.screen_callback(_)
 end
 
 function Set_Current_Voice(voice_id)
-  Voice = voice_id // 7
+  Voice = voice_id
   Screen_Dirty = true
 end
 
@@ -110,7 +110,7 @@ function Engine_UI.init()
           self.osc_graph:update_functions()
           self.osc_graph:redraw()
         end),
-      Tab.new({"width_formant_", "lfo_formant_width_mod_", "env_formant_width_mod_", "formant_", "square_formant_mod_", "lfo_formant_mod_", "env_formant_mod_", "square_formant_amp_mod_", "detune_formant_octave_", "detune_formant_steps_", "detune_formant_cents_", "lfo_pitch_mod_", "env_pitch_mod_", "formant_amp_", "lfo_amp_mod_"},
+      Tab.new({"width_formant_", "lfo_formant_width_mod_", "env_formant_width_mod_", "formant_", "square_formant_mod_", "lfo_formant_mod_", "env_formant_mod_", "detune_formant_octave_", "detune_formant_steps_", "detune_formant_cents_", "lfo_pitch_mod_", "env_pitch_mod_", "formant_amp_", "square_formant_amp_mod_", "lfo_amp_mod_"},
         {
           UI.ScrollingList.new(70, 24, 1, {"width", "lfo>width", "env>width", "formant", "sq>form", "lfo>form", "env>form", "oct", "coarse", "fine", "lfo>pitch", "env>pitch", "amp", "sq>amp", "lfo>amp"}),
           UI.ScrollingList.new(120, 24)
@@ -288,10 +288,10 @@ function Engine_UI.init()
           self.filt_graph:redraw()
         end)
     })
-  Page[3].tabs[1].filt_graph = Filtergraph.new(10, 20000, -60, 32.5, "highpass", 12, params:get("highpass_freq_" .. Voice), params:get("highpass_resonance_" .. Voice))
-  Page[3].tabs[2].filt_graph = Filtergraph.new(10, 20000, -60, 32.5, "lowpass", 12, params:get("lowpass_freq_" .. Voice), params:get("lowpass_resonance_" .. Voice))
-  Page[3].tabs[1].filt_graph:set_position_and_size(4, 22, 56, 38)
-  Page[3].tabs[2].filt_graph:set_position_and_size(4, 22, 56, 38)
+  Screen[3].tabs[1].filt_graph = Filtergraph.new(10, 20000, -60, 32.5, "highpass", 12, params:get("highpass_freq_" .. Voice), params:get("highpass_resonance_" .. Voice))
+  Screen[3].tabs[2].filt_graph = Filtergraph.new(10, 20000, -60, 32.5, "lowpass", 12, params:get("lowpass_freq_" .. Voice), params:get("lowpass_resonance_" .. Voice))
+  Screen[3].tabs[1].filt_graph:set_position_and_size(4, 22, 56, 38)
+  Screen[3].tabs[2].filt_graph:set_position_and_size(4, 22, 56, 38)
 
   local screen_redraw_metro = metro.init()
   screen_redraw_metro.event = function ()

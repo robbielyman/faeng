@@ -12,7 +12,7 @@ Engine_Turns : CroneEngine {
   }
 
   alloc {
-    outBus = Bus.audio(2);
+    outBus = Bus.audio(numChannels:2);
     SynthDef("ColorLimiter", { arg input;
       Out.ar(context.out_b, In.ar(input).tanh);
     });
@@ -22,7 +22,7 @@ Engine_Turns : CroneEngine {
     NodeWatcher.register(endOfChain);
     
     SynthDef("Turns", {
-      var gate = \amp_gate.kr(0);
+      var ampgate = \amp_gate.kr(0);
       var env = Env.adsr(\amp_attack.kr(0.1), \amp_decay.kr(0.3), \amp_sustain.kr(0.7), \amp_release.kr(0.2)).kr(0, ampgate);
       var modenv = Env.adsr(\mod_attack.kr(0.1), \mod_decay.kr(0.3), \mod_sustain.kr(0.7), \mod_release.kr(0.2)).kr(0, \mod_gate.kr(0));
       var lfo = LFTri.kr(\lfo_freq.kr(1), mul:Env.asr(\lfo_fade.kr(0), 1, 10).kr(0, ampgate));

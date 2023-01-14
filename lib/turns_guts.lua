@@ -20,7 +20,7 @@ function Turns.init()
     params:add_group("turns_voice_" .. i, "TURNS " .. i, NUM_PARAMS)
     params:add{
       type  = "control",
-      id    = "amp_" .. suffix,
+      id    = "amp" .. suffix,
       name  = "amp",
       controlspec = lin(0, 1, 0.5),
       action = function (x)
@@ -351,7 +351,7 @@ function Turns.init()
         Turns.param_changed_callback("env_index_mod" .. suffix)
       end
     }
-    params:add_separator("formant" .. suffix, "formant")
+    params:add_separator("formant_sep" .. suffix, "formant")
     params:add{
       type  = "control",
       id    = "width_formant" .. suffix,

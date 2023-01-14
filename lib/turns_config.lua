@@ -4,7 +4,7 @@ DEFAULTS.pans = {-1, -0.75, -0.5, 0, 0.5, 0.75, 1}
 DEFAULTS.filter = {-1, -0.5, 0, 0.5, 1}
 
 local extensions = "/home/we/.local/share/SuperCollider/Extensions/"
-Needs_Restart = util.file_exists(extensions .. "PulsePTR/PulsePTR.sc") and util.file_exists(extensions .. "FormantTriPTR/FormantTriPTR.sc")
+Needs_Restart = not util.file_exists(extensions .. "PulsePTR/PulsePTR.sc") or not util.file_exists(extensions .. "FormantTriPTR/FormantTriPTR.sc")
 
 local config = {
   engine = {
@@ -26,7 +26,15 @@ local config = {
       'amp'
     },
   },
-  modules = {},
+  modules = {
+    arc_guts = {
+      enabled = false
+    },
+    narcissus = {
+      enabled = false
+    }
+  },
+  use_id_minor = false,
   play_note = function (track)
     if track.muted then return end
     local note = track:get('note') + track:get('alt_note') - 1
@@ -39,8 +47,8 @@ local config = {
       util.os_capture("mkdir -p /home/we/.local/share/SuperCollider/Extensions/PulsePTR")
       util.os_capture("mkdir -p /home/we/.local/share/SuperCollider/Extensions/FormantTriPTR")
       for _, ugen in ipairs({"PulsePTR", "FormantTriPTR"}) do
-        util.os_capture("cp " .. norns.state.lib .. "ignore/" .. ugen .. "/" .. ugen .. "_scsynth.so " .. extensions .. ugen .. "/" .. ugen .. "_scsynth.so")
-        util.os_capture("cp " .. norns.state.lib .. "ignore/" .. ugen .. "/" .. ugen .. ".sc " .. extensions .. ugen .. "/" .. ugen .. ".sc")
+        util.os_capture("cp " .. norns.state.lib .. "ignore/" .. ugen .. "_scsynth.so " .. extensions .. ugen .. "/" .. ugen .. "_scsynth.so")
+        util.os_capture("cp " .. norns.state.lib .. "ignore/" .. ugen .. ".sc " .. extensions .. ugen .. "/" .. ugen .. ".sc")
       end
       Engine_UI.init()
       return

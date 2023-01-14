@@ -138,6 +138,8 @@ local config = {
       },
     },
   },
+  -- are there 7 voices or 49? you decide
+  use_id_minor = true,
   -- should be a list of ten strings
   page = {
     pages = {

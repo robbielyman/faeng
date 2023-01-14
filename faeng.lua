@@ -121,7 +121,11 @@ end
 -- get and set current voice
 
 function Get_Current_Voice()
-  return 7 * (Active_Track - 1)  + Tracks[Active_Track].id_minor
+  if config.use_id_minor then
+    return 7 * (Active_Track - 1)  + Tracks[Active_Track].id_minor
+  else
+    return Active_Track - 1
+  end
 end
 
 norns_assert(type(Set_Current_Voice) == "function", 'config error: Set_Current_Voice undefined')
