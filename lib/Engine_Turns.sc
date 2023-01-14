@@ -14,8 +14,8 @@ Engine_Turns : CroneEngine {
   alloc {
     outBus = Bus.audio(numChannels:2);
     SynthDef("ColorLimiter", { arg input;
-      Out.ar(context.out_b, In.ar(input).tanh);
-    });
+      Out.ar(context.out_b, In.ar(input, 2).tanh);
+    }).add;
     
     Server.default.sync;
     endOfChain = Synth.new("ColorLimiter", [\input, outBus]);
@@ -45,17 +45,18 @@ Engine_Turns : CroneEngine {
       Out.ar(\out.ir, Pan2.ar(snd * 0.5 * \amp.kr(0.5), \pan.kr(0)));
     }).add;
 
-    tVoices = Array.fill(7, {
-      Synth.before(endOfChain, "Turns", [\out, outBus]);
-    });
+    tVoices = Dictionary.new;
+    Server.default.sync;
     7.do({ arg i;
-      NodeWatcher.register(tVoices[i], true);
+      var syn = Synth.before(endOfChain, "Turns", [\out, outBus]);
+      NodeWatcher.register(syn, true);
+      tVoices.put(i, syn)
     });
 
     this.addCommand("set", "sif", { arg msg;
       var key = msg[1].asSymbol;
       var val = msg[3];
-      tVoices[msg[2]].set(key, val);
+      tVoices.at(msg[2]).set(key, val);
     });
   }
 

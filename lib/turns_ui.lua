@@ -268,12 +268,14 @@ function Engine_UI.init()
     {
       Tab.new({"highpass_freq_", "highpass_resonance_", "lfo_highpass_mod_", "env_highpass_mod_"},
         {
-          UI.List.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
-          UI.List.new(120, 34)
+          UI.ScrollingList.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(120, 34)
         },
         function (self)
           self.lists[1].index = self.index
+          self.lists[1].num_above_selected = 1
           self.lists[2].index = self.index
+          self.lists[2].num_above_selected = 1
           for i = 1, 4 do
             self.lists[2].entries[i] = params:string(self.params[i] .. Voice)
           end
@@ -283,12 +285,14 @@ function Engine_UI.init()
         end),
       Tab.new({"lowpass_freq_", "lowpass_resonance_", "lfo_lowpass_mod_", "env_lowpass_mod_"},
         {
-          UI.List.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
-          UI.List.new(120, 34)
+          UI.ScrollingList.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(120, 34)
         },
         function (self)
           self.lists[1].index = self.index
+          self.lists[1].num_above_selected = 1
           self.lists[2].index = self.index
+          self.lists[2].num_above_selected = 1
           for i = 1, 4 do
             self.lists[2].entries[i] = params:string(self.params[i] .. Voice)
           end

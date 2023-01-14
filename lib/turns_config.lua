@@ -1,6 +1,7 @@
 local _, DEFAULTS = dofile(norns.state.lib .. 'default_config.lua')
 
 DEFAULTS.pans = {-1, -0.75, -0.5, 0, 0.5, 0.75, 1}
+DEFAULTS.accidental = {-1, -0.5, -0.25, 0, 0.25, 0.5, 1}
 DEFAULTS.filter = {-1, -0.5, 0, 0.5, 1}
 
 local extensions = "/home/we/.local/share/SuperCollider/Extensions/"
@@ -40,7 +41,7 @@ local config = {
     local note = track:get('note') + track:get('alt_note') - 1
     note = Scale(note) + 12 * (track:get('octave') - 3)
     note = note + DEFAULTS.accidental[track:get('accidental')]
-    engine.note(track.id - 1, note)
+    Engine.note(track.id - 1, note)
   end,
   setup = function ()
     if Needs_Restart then
@@ -82,6 +83,10 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
+      if track.muted then
+        engine.set("amp_gate", track.id - 1, 0)
+        return
+      end
       engine.set("amp_gate", track.id - 1, datum)
     end
   },
@@ -153,6 +158,7 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
+      if track.muted then return end
       engine.set("mod_gate", track.id - 1, datum)
     end
   },
