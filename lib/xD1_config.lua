@@ -98,7 +98,7 @@ local config = {
     Playing[track.id] = 0
     if track.muted then return end
     if track:get('trigger') == 0 then return end
-    local note = track:get('note') + track:get('alt_note')
+    local note = track:get('note') + track:get('alt_note') - 1
     note = Scale(note) + 12 * (track:get('octave') - 3)
     local preset = (track.id - 1) * 7 + track:get('preset') - 1
     local velocity = DEFAULTS.velocities[track:get('velocity')]
