@@ -4,7 +4,7 @@
 -- connect a grid
 -- and take wing
 --
--- v 1.1   @alanza
+-- v 1.2   @alanza
 --    ▼ instructions below ▼
 --
 -- llllllll.co/t/faeng-is-a-sequencer/

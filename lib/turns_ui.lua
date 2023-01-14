@@ -33,7 +33,7 @@ function Tab:enc(n, d)
   if n == 2 then
     self.index = util.clamp(self.index + d, 1, #self.params)
   elseif n == 3 then
-    params:delta(self.params[self.index], d)
+    params:delta(self.params[self.index] .. Voice, d)
   end
 end
 
@@ -103,7 +103,7 @@ function Engine_UI.init()
           self.lists[1].num_above_selected = 1
           self.lists[2].index = self.index
           self.lists[2].num_above_selected = 1
-          for i = 1, 15 do
+          for i = 1, 14 do
             self.lists[2].entries[i] = params:string(self.params[i] .. Voice)
           end
           self.lists[2].text_align = "right"
@@ -136,9 +136,11 @@ function Engine_UI.init()
     local y =  x % 1 < w and -1 or 1
     return y
   end
+  local offset = -1
   local last = 0
   local state = false
   local function form_func(x)
+    x = x * 4
     local w = params:get("width_formant_" .. Voice)
     local sq = sq_func(x)
     local form = 2^params:get("formant_" .. Voice)
@@ -156,23 +158,30 @@ function Engine_UI.init()
     local y
     if not state then
       -- rise: do we start falling?
-      if x + last > w then
+      if a * (x - last) + offset > 1 then
         state = not state
+        last = x
       end
     else
       -- fall: do we start rising?
       if x % 1 < 0.01 then
-        last = x
         state = not state
+        offset = math.max(b * (x - last) + 1, -1)
+        last = x
       end
     end
     if state then
       -- falling
-      y = math.max(b * (x + last - w) + 1, -1)
+      y = math.max(b * (x - last) + 1, -1)
     else
-      y = a * (x + last) - 1
+      y = a * (x - last) + offset
     end
     local am = sq * params:get("square_formant_amp_mod_" .. Voice)
+    if x == 4 then
+      state = false
+      last = 0
+      offset = -1
+    end
     return util.clamp(y * (params:get("formant_amp_" .. Voice) + am), -1, 1)
   end
   for i = 1, 2 do
@@ -340,7 +349,7 @@ function Engine_UI.enc(n, d)
 end
 
 function Engine_UI.key(n, z)
-  Screen[Screen.index]:keyw(n, z)
+  Screen[Screen.index]:key(n, z)
   Screen_Dirty = true
   Popup = nil
 end

@@ -40,7 +40,7 @@ local config = {
     local note = track:get('note') + track:get('alt_note') - 1
     note = Scale(note) + 12 * (track:get('octave') - 3)
     note = note + DEFAULTS.accidental[track:get('accidental')]
-    engine.note(track.id, note)
+    engine.note(track.id - 1, note)
   end,
   setup = function ()
     if Needs_Restart then
@@ -82,7 +82,7 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      engine.set("amp_gate", track.id, datum)
+      engine.set("amp_gate", track.id - 1, datum)
     end
   },
   note = {
@@ -123,8 +123,8 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      local freq = 2^DEFAULTS.filter[datum] * params:get("lowpass_freq_" .. track.id)
-      engine.set("lowpass_freq", track.id, freq)
+      local freq = 2^DEFAULTS.filter[datum] * params:get("lowpass_freq_" .. track.id - 1)
+      engine.set("lowpass_freq", track.id - 1, freq)
     end
   },
   mod_gate = {
@@ -153,7 +153,7 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      engine.set("mod_gate", track.id, datum)
+      engine.set("mod_gate", track.id - 1, datum)
     end
   },
   accidental = {
@@ -192,8 +192,8 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      local pan = DEFAULTS.pans[datum] + params:get("pan_" .. track.id)
-      engine.set("pan", track.id, util.clamp(pan, -1, 1))
+      local pan = DEFAULTS.pans[datum] + params:get("pan_" .. track.id - 1)
+      engine.set("pan", track.id - 1, util.clamp(pan, -1, 1))
     end
   },
   highpass = {
@@ -205,8 +205,8 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      local freq = 2^DEFAULTS.filter[datum] * params:get("highpass_freq_" .. track.id)
-      engine.set("highpass_freq", track.id, freq)
+      local freq = 2^DEFAULTS.filter[datum] * params:get("highpass_freq_" .. track.id - 1)
+      engine.set("highpass_freq", track.id - 1, freq)
     end
   },
   amp = {
@@ -218,8 +218,8 @@ local config = {
     },
     action = function (track, name, datum, _)
       DEFAULTS.action(track, name, datum, _)
-      local amp = 2^DEFAULTS.filter[datum] * params:get("amp_" .. track.id)
-      engine.set("amp", track.id, amp)
+      local amp = 2^DEFAULTS.filter[datum] * params:get("amp_" .. track.id - 1)
+      engine.set("amp", track.id - 1, amp)
     end
   },
 }
