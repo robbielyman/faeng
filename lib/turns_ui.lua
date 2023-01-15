@@ -212,7 +212,7 @@ function Engine_UI.init()
           self.env_graph:edit_adsr(params:get(self.params[1]..Voice), params:get(self.params[2]..Voice), params:get(self.params[3]..Voice), params:get(self.params[4]..Voice))
           self.env_graph:redraw()
         end),
-      Tab.new({"mod_attack", "mod_decay_", "mod_sustain_", "mod_release_"},
+      Tab.new({"mod_attack_", "mod_decay_", "mod_sustain_", "mod_release_"},
         {
           UI.ScrollingList.new(70, 24, 1, {"atk", "dec", "sus", "rel"}),
           UI.ScrollingList.new(120, 24)
@@ -268,8 +268,8 @@ function Engine_UI.init()
     {
       Tab.new({"highpass_freq_", "highpass_resonance_", "lfo_highpass_mod_", "env_highpass_mod_"},
         {
-          UI.ScrollingList.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
-          UI.ScrollingList.new(120, 34)
+          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(120, 24)
         },
         function (self)
           self.lists[1].index = self.index
@@ -285,8 +285,8 @@ function Engine_UI.init()
         end),
       Tab.new({"lowpass_freq_", "lowpass_resonance_", "lfo_lowpass_mod_", "env_lowpass_mod_"},
         {
-          UI.ScrollingList.new(70, 34, 1, {"freq", "res", "lfo>freq", "env>freq"}),
-          UI.ScrollingList.new(120, 34)
+          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(120, 24)
         },
         function (self)
           self.lists[1].index = self.index

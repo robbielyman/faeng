@@ -199,6 +199,9 @@ local function import_tracks(data)
       "muted", "bounds", "data"
     }
     for _, k in ipairs(keys) do
+      if k == "divisions" and type(datum(k)) == "number" then
+        datum[k] = {datum[k], 16}
+      end
       Tracks[i][k] = datum[k]
     end
     for j = 1, 2*PAGES do
@@ -757,7 +760,7 @@ local function page_view()
   if SubSequins > 0 then
     if type(track.data[page][Pattern][SubSequins]) == "number" then
       track.data[page][Pattern][SubSequins] = {track.data[page][Pattern][SubSequins]}
-      track:make_sequins(page, Pattern)
+      track:make_sequins(page)
     end
     local datum = track.data[page][Pattern][SubSequins]
     for x = 1, #datum do
@@ -853,7 +856,7 @@ function init()
     Tracks[i] = Track.new(i, lattice)
   end
   Tracks[TRACKS+1] = Track.pattern_new(lattice)
-  
+
   -- params
   params.action_read = function (_, _, number)
     local tracks_data = tab.load(norns.state.data .. "/pset_track_data_" .. number .. ".data")

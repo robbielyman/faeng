@@ -514,7 +514,6 @@ function Turns.init()
       end
     }
   end
-  params:bang()
 end
 
 function Turns.amp_gate(voice, gate)

@@ -38,8 +38,8 @@ Engine_Turns : CroneEngine {
       var form_form = pitch_form * ((2 ** \formant.kr(0)) + (sq * \square_formant_mod.kr(0)) + (lfo * \lfo_formant_mod.kr(0)) + (modenv * \env_formant_mod.kr(0)));
       var form = SineShaper.ar(FormantTriPTR.ar(pitch_form, form_form, width_form) * (\formant_amp.kr(0.5) + (sq * \square_formant_amp_mod.kr(0))), 0.5, 2);
       var snd = (env + amp_lfo) * (form + (\square_amp.kr(0.5) * sq));
-      var hifreq = (2 ** (modenv * \env_highpass_mod.kr(0)) + (lfo * \lfo_highpass_mod.kr(0))) * \highpass_freq.kr(50);
-      var lofreq = (2 ** (modenv * \env_lowpass_mod.kr(0)) + (lfo * \lfo_lowpass_mod.kr(0))) * \lowpass_freq.kr(15000);
+      var hifreq = (2 ** (modenv * 5 * \env_highpass_mod.kr(0)) + (lfo * \lfo_highpass_mod.kr(0))) * \highpass_freq.kr(50);
+      var lofreq = (2 ** (modenv * 5 * \env_lowpass_mod.kr(0)) + (lfo * \lfo_lowpass_mod.kr(0))) * \lowpass_freq.kr(15000);
       snd = SVF.ar(snd, hifreq, \highpass_resonance.kr(0), lowpass:0, highpass:1);
       snd = SVF.ar(snd, lofreq, \lowpass_resonance.kr(0));
       Out.ar(\out.ir, Pan2.ar(snd * 0.5 * \amp.kr(0.5), \pan.kr(0)));

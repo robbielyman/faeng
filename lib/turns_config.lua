@@ -56,6 +56,7 @@ local config = {
     end
     Engine.init()
     Engine_UI.init()
+    params:bang()
   end,
   amp_gate = {
     data = 0,
@@ -82,12 +83,15 @@ local config = {
       end
     },
     action = function (track, name, datum, _)
+      local old = track:get('amp_gate')
       DEFAULTS.action(track, name, datum, _)
       if track.muted then
         engine.set("amp_gate", track.id - 1, 0)
         return
       end
-      engine.set("amp_gate", track.id - 1, datum)
+      if datum ~= old then
+        engine.set("amp_gate", track.id - 1, datum)
+      end
     end
   },
   note = {
@@ -157,9 +161,12 @@ local config = {
       end
     },
     action = function (track, name, datum, _)
+      local old = track:get('mod_gate')
       DEFAULTS.action(track, name, datum, _)
       if track.muted then return end
-      engine.set("mod_gate", track.id - 1, datum)
+      if old ~= datum then
+        Engine.mod_gate(track.id - 1, datum)
+      end
     end
   },
   accidental = {
