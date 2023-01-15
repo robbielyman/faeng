@@ -199,7 +199,7 @@ local function import_tracks(data)
       "muted", "bounds", "data"
     }
     for _, k in ipairs(keys) do
-      if k == "divisions" and type(datum(k)) == "number" then
+      if k == "divisions" and type(datum[k]) == "number" then
         datum[k] = {datum[k], 16}
       end
       Tracks[i][k] = datum[k]
@@ -215,6 +215,9 @@ local function import_tracks(data)
     "bounds", "data", "selected"
   }
   for _, k in ipairs(keys) do
+    if k == "divisions" and type(datum[k]) == "number" then
+      datum[k] = {datum[k], 16}
+    end
     Tracks[TRACKS + 1][k] = datum[k]
   end
 end
