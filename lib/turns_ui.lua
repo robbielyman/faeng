@@ -95,7 +95,7 @@ function Engine_UI.init()
     {
       Tab.new({"square_amp_", "width_square_", "lfo_square_width_mod_", "env_square_width_mod_", "fm_numerator_", "fm_denominator_", "fm_index_", "lfo_index_mod_", "env_index_mod_", "detune_square_octave_", "detune_square_steps_", "detune_square_cents_", "lfo_pitch_mod_", "env_pitch_mod_"},
         {
-          UI.ScrollingList.new(70, 24, 1, {"amp", "width", "lfo>width", "env>width", "num", "denom", "index", "lfo>index", "env>index", "oct", "coarse", "fine", "lfo>pitch", "env>pitch"}),
+          UI.ScrollingList.new(70, 24, 1, {"amp", "width", "l>width", "e>width", "num", "denom", "index", "l>index", "e>index", "oct", "coarse", "fine", "l>pitch", "e>pitch"}),
           UI.ScrollingList.new(120, 24)
         },
         function (self)
@@ -112,7 +112,7 @@ function Engine_UI.init()
         end),
       Tab.new({"width_formant_", "lfo_formant_width_mod_", "env_formant_width_mod_", "formant_", "square_formant_mod_", "lfo_formant_mod_", "env_formant_mod_", "detune_formant_octave_", "detune_formant_steps_", "detune_formant_cents_", "lfo_pitch_mod_", "env_pitch_mod_", "formant_amp_", "square_formant_amp_mod_", "lfo_amp_mod_"},
         {
-          UI.ScrollingList.new(70, 24, 1, {"width", "lfo>width", "env>width", "formant", "sq>form", "lfo>form", "env>form", "oct", "coarse", "fine", "lfo>pitch", "env>pitch", "amp", "sq>amp", "lfo>amp"}),
+          UI.ScrollingList.new(70, 24, 1, {"width", "l>width", "e>width", "formant", "sq>form", "l>form", "e>form", "oct", "coarse", "fine", "l>pitch", "e>pitch", "amp", "sq>amp", "l>amp"}),
           UI.ScrollingList.new(120, 24)
         },
         function (self)
@@ -268,7 +268,7 @@ function Engine_UI.init()
     {
       Tab.new({"highpass_freq_", "highpass_resonance_", "lfo_highpass_mod_", "env_highpass_mod_"},
         {
-          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "l>freq", "e>freq"}),
           UI.ScrollingList.new(120, 24)
         },
         function (self)
@@ -285,7 +285,7 @@ function Engine_UI.init()
         end),
       Tab.new({"lowpass_freq_", "lowpass_resonance_", "lfo_lowpass_mod_", "env_lowpass_mod_"},
         {
-          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "lfo>freq", "env>freq"}),
+          UI.ScrollingList.new(70, 24, 1, {"freq", "res", "l>freq", "e>freq"}),
           UI.ScrollingList.new(120, 24)
         },
         function (self)
