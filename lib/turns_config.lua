@@ -92,6 +92,7 @@ local config = {
       if datum ~= old then
         engine.set("amp_gate", track.id - 1, datum)
       end
+      Playing[track.id] = datum
     end
   },
   note = {

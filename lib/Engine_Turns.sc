@@ -1,4 +1,4 @@
-// 7-voice formant monosynth for faeng
+// 7x formant monosynth for faeng
 
 // this is a CroneEngine
 Engine_Turns : CroneEngine {
@@ -32,7 +32,7 @@ Engine_Turns : CroneEngine {
       var pitch_sq = (note + \detune_square.kr(0) + pitch_mod).midicps;
       var width_sq = \width_square.kr(0.5) + (0.5 * \lfo_square_width_mod.kr(0) * lfo) + (\env_square_width_mod.kr(0) * modenv);
       var index = \fm_index.kr(0) + (2 * \env_index_mod.kr(0) * modenv) + (20 * \lfo_index_mod.kr(0) * amp_lfo);
-      var sq = PulsePTR.ar(freq:pitch_sq, width:width_sq, phase:SinOsc.ar(pitch_sq * \fm_numerator.kr(1) / \fm_denominator.kr(1), mul:index));
+      var sq = PulsePTR.ar(freq:pitch_sq, width:width_sq, phase:SinOsc.ar(pitch_sq * \fm_numerator.kr(1) / \fm_denominator.kr(1), mul:index))[0];
       var pitch_form = (note + \detune_formant.kr(0) + pitch_mod).midicps;
       var width_form = \width_formant.kr(0.5) + (0.5 * \lfo_formant_width_mod.kr(0) * lfo) + (\env_formant_width_mod.kr(0) * modenv);
       var form_form = pitch_form * ((2 ** \formant.kr(0)) + (sq * \square_formant_mod.kr(0)) + (lfo * \lfo_formant_mod.kr(0)) + (modenv * \env_formant_mod.kr(0)));
