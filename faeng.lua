@@ -204,6 +204,9 @@ local function import_tracks(data)
       end
       Tracks[i][k] = datum[k]
     end
+    if Tracks[i].id_minor == nil then
+      Tracks[i].id_minor = 0
+    end
     for j = 1, 2*PAGES do
       Tracks[i]:make_sequins(j)
       Tracks[i]:update(j)
